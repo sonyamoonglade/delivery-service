@@ -11,6 +11,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/internal/service"
 	"github.com/sonyamoonglade/delivery-service/internal/storage"
 	"go.uber.org/zap"
+	"log"
 	"os"
 )
 
@@ -18,7 +19,7 @@ func main() {
 
 	logger, err := zap.NewProduction()
 	if err != nil {
-		logger.Error(err.Error())
+		log.Println(err.Error())
 	}
 
 	if err = godotenv.Load(".env"); err != nil {

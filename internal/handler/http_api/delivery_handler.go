@@ -2,6 +2,7 @@ package apihandler
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/service"
@@ -27,14 +28,13 @@ func (h *DeliveryHandler) RegisterRoutes(r *httprouter.Router) {
 }
 
 func (h *DeliveryHandler) CreateDelivery(rw http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-
 	var p tgdelivery.Payload
 
 	b, _ := io.ReadAll(req.Body)
 	json.Unmarshal(b, &p)
 
 	rw.Write([]byte("Hello world"))
-
+	fmt.Printf("%v", p.User.Marks)
 	h.tgservice.Send(&p)
 
 	return

@@ -23,10 +23,10 @@ type DeliveryDetails struct {
 }
 
 type User struct {
-	UserID      int64   `json:"user_id"`
-	Username    string  `json:"username"`
-	PhoneNumber string  `json:"phone_number"`
-	Marks       []*Mark `json:"marks,omitempty"`
+	UserID      int64  `json:"user_id"`
+	Username    string `json:"username"`
+	PhoneNumber string `json:"phone_number"`
+	Marks       []Mark `json:"marks,omitempty"`
 }
 
 type Mark struct {
@@ -62,14 +62,17 @@ var (
 )
 
 const MessageTemplate = "" +
-	"Заказ - #orderId\n\r" +
-	"Сумма - sum\n\r" +
-	"Способ оплаты - pay\n\r" +
-	"Заказчик - username\n\r" +
-	"Номер телефона - phoneNumber\n\r" +
-	"----------\n\r" +
+	"Заказ #orderId\n\r" +
+	"\n\r" +
+	"Сумма | sum.0 ₽\n\r" +
+	"Способ оплаты | pay\n\r" +
+	"\n\r" +
+	"Заказчик: username\n\r" +
+	"Номер телефона  phoneNumber\n\r" +
+	"marks" +
+	"\n\r" +
 	"Доставка: да\n\r" +
-	"Адрес: address\n\r" +
-	"Подъезд ent; Этаж gr; Квартира fl\n\r" +
-	"----------\n\r" +
-	"Время доставки - time"
+	"Адрес: ул. address\n\r" +
+	"Подъезд ent | Этаж gr | Квартира fl\n\r" +
+	"\n\r" +
+	"Время доставки: к time"
