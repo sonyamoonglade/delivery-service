@@ -55,16 +55,15 @@ func main() {
 	logger.Info("Bot has initialized")
 
 	tgHandler := tghandler.NewTgHandler(logger, bot)
-	logger.Info("Telegram update handler initialized")
+	tgService := service.NewTelegramService(logger, bot)
+	logger.Info("Telegram composite initialized")
 
 	go tgHandler.ListenForUpdates(bot, updCfg)
 	logger.Info("Bot is listening to updates")
 
-	tgservice := service.NewTelegramService(logger, bot)
-
 	deliveryStorage := storage.NewDeliveryStorage(logger, db)
 	deliveryService := service.NewDeliveryService(logger, deliveryStorage)
-	deliveryHandler := apihandler.NewDeliveryHandler(logger, deliveryService, tgservice)
+	deliveryHandler := apihandler.NewDeliveryHandler(logger, deliveryService, tgService)
 	logger.Info("Delivery composite initialized")
 
 	router := httprouter.New()
