@@ -1,8 +1,8 @@
 package api_erros
 
-var (
-	// InternalServerError describes message if something has gone wrong.
-	InternalServerError = "Internal server error"
+const (
+	InternalServerError   = "internal server error"
+	DeliveryAlreadyExists = "delivery already exists"
 )
 
 type InvalidDelivery struct {

@@ -19,8 +19,6 @@ CREATE INDEX "phone_number_idx" ON "runner"("phone_number");
 CREATE TABLE IF NOT EXISTS "delivery"(
     "delivery_id" SERIAL PRIMARY KEY NOT NULL,
     "order_id" INTEGER NOT NULL,
-    "runner_id" INTEGER NOT NULL,
-    "reserved_at" TIMESTAMP DEFAULT NULL,
     "created_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'utc'),
     "is_free" BOOLEAN NOT NULL DEFAULT TRUE,
     "pay" pay NOT NULL
@@ -29,10 +27,23 @@ CREATE TABLE IF NOT EXISTS "delivery"(
 ALTER TABLE "delivery" ADD CONSTRAINT "order_id_unique"
     UNIQUE("order_id");
 
-ALTER TABLE "delivery" ADD CONSTRAINT "runner_id_fk"
-    FOREIGN KEY("order_id")
+CREATE INDEX "order_id_idx" ON "delivery" ("order_id");
+
+
+CREATE TABLE IF NOT EXISTS "reserved"(
+    "delivery_id" SERIAL PRIMARY KEY NOT NULL,
+    "runner_id" INTEGER NOT NULL,
+    "reserved_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'utc')
+);
+
+ALTER TABLE "reserved" ADD CONSTRAINT "runner_id_fk"
+    FOREIGN KEY("runner_id")
     REFERENCES runner("runner_id")
     ON DELETE CASCADE;
 
-CREATE INDEX "order_id_idx" ON "delivery" ("order_id");
-CREATE INDEX "runner_id_idx" ON "delivery" ("runner_id");
+ALTER TABLE "reserved" ADD CONSTRAINT "delivery_id_fk"
+    FOREIGN KEY("delivery_id")
+    REFERENCES delivery("delivery_id")
+    ON DELETE CASCADE;
+
+CREATE INDEX "runner_id_idx" ON "reserved" ("runner_id");

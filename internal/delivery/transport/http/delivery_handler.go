@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
@@ -39,7 +40,7 @@ func (h *DeliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 			responder.JSON(w, responder.R{
 				"message": err.Error(),
 			}, http.StatusBadRequest)
-			h.logger.Error(err.Error())
+			h.logger.Debug(err.Error())
 			return
 		}
 		responder.JSON(w, responder.R{
@@ -55,7 +56,11 @@ func (h *DeliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 
 	deliveryID, err := h.deliveryService.Create(createDto)
 	if err != nil {
-
+		//todo: apply custom error
+		responder.JSON(w, responder.R{
+			"message": err.Error(),
+		}, http.StatusInternalServerError)
+		h.logger.Debug(fmt.Sprintf("could not create delivery in database. %s", err.Error()))
 		return
 	}
 	h.logger.Debug("created delivery in database")

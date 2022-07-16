@@ -1,7 +1,7 @@
 app:
   port: "9000"
 db:
-  user: "postgres"
+  user: "dlvuser"
   database: "delivery"
   host: "localhost"
-  port: "5432"
+  port: "5433"

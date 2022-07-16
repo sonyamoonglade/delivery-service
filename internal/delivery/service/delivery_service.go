@@ -1,8 +1,10 @@
 package service
 
 import (
+	"errors"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
+	api_erros "github.com/sonyamoonglade/delivery-service/pkg/errors/api"
 	"go.uber.org/zap"
 )
 
@@ -18,6 +20,10 @@ func NewDeliveryService(logger *zap.Logger, storage delivery.Storage) delivery.D
 func (s *deliveryService) Create(dto *dto.CreateDeliveryDto) (int64, error) {
 
 	deliveryID, err := s.storage.Create(dto)
+	//todo: custom error
+	if deliveryID == 0 {
+		return 0, errors.New(api_erros.DeliveryAlreadyExists)
+	}
 	if err != nil {
 		return 0, err
 	}

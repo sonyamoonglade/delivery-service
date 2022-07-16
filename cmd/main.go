@@ -33,7 +33,7 @@ func main() {
 		logger.Error(fmt.Sprintf("Could not read from config. %s", err.Error()))
 	}
 
-	db, err := postgres.Connect(&postgres.PostgresConfig{
+	db, err := postgres.Connect(&postgres.DbConfig{
 		User:     appCfg.GetString("db.user"),
 		Password: os.Getenv("DB_PASSWORD"),
 		Host:     appCfg.GetString("db.host"),
