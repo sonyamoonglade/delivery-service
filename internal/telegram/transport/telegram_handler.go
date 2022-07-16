@@ -34,6 +34,7 @@ func (h *TgHandler) HandleCallback(cb *tg.CallbackQuery) {
 
 }
 
+//todo: return err
 func (h *TgHandler) HandleMessage(m *tg.Message) {
 	h.bot.Send(tg.NewMessage(m.Chat.ID, "Hello:D"))
 }
