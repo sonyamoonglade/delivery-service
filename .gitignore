@@ -1,3 +1,4 @@
 cmd/done.docx
 .idea
 .env
+docker/*
