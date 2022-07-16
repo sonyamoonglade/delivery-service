@@ -6,10 +6,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/config"
-	apihandler "github.com/sonyamoonglade/delivery-service/internal/handler/http_api"
-	tghandler "github.com/sonyamoonglade/delivery-service/internal/handler/tg_api"
-	"github.com/sonyamoonglade/delivery-service/internal/service"
-	"github.com/sonyamoonglade/delivery-service/internal/storage"
+	service2 "github.com/sonyamoonglade/delivery-service/internal/delivery/service"
+	storage2 "github.com/sonyamoonglade/delivery-service/internal/delivery/storage"
+	apihandler "github.com/sonyamoonglade/delivery-service/internal/delivery/transport/http"
+	"github.com/sonyamoonglade/delivery-service/internal/telegram/service"
+	tghandler "github.com/sonyamoonglade/delivery-service/internal/telegram/transport"
+	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"go.uber.org/zap"
 	"log"
 	"os"
@@ -31,7 +33,7 @@ func main() {
 		logger.Error(fmt.Sprintf("Could not read from config. %s", err.Error()))
 	}
 
-	db, err := storage.Connect(&storage.PostgresConfig{
+	db, err := postgres.Connect(&postgres.PostgresConfig{
 		User:     appCfg.GetString("db.user"),
 		Password: os.Getenv("DB_PASSWORD"),
 		Host:     appCfg.GetString("db.host"),
@@ -61,8 +63,8 @@ func main() {
 	go tgHandler.ListenForUpdates(bot, updCfg)
 	logger.Info("Bot is listening to updates")
 
-	deliveryStorage := storage.NewDeliveryStorage(logger, db)
-	deliveryService := service.NewDeliveryService(logger, deliveryStorage)
+	deliveryStorage := storage2.NewDeliveryStorage(logger, db)
+	deliveryService := service2.NewDeliveryService(logger, deliveryStorage)
 	deliveryHandler := apihandler.NewDeliveryHandler(logger, deliveryService, tgService)
 	logger.Info("Delivery composite initialized")
 

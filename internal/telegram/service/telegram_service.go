@@ -4,28 +4,24 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
+	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"go.uber.org/zap"
 	"strings"
 )
 
 const ChatId = -784171010
 
-type Telegram interface {
-	Send(p *tgdelivery.Payload) error
-}
-
 type telegramService struct {
 	bot    *tg.BotAPI
 	logger *zap.Logger
 }
 
-func NewTelegramService(logger *zap.Logger, bot *tg.BotAPI) *telegramService {
+func NewTelegramService(logger *zap.Logger, bot *tg.BotAPI) telegram.Telegram {
 	return &telegramService{bot: bot, logger: logger}
 }
 
-func (t *telegramService) Send(p *tgdelivery.Payload) error {
+func (t *telegramService) Send(text string) error {
 
-	text, _ := t.FromTemplate(p)
 	msg := tg.NewMessage(ChatId, text)
 	_, err := t.bot.Send(msg)
 	if err != nil {
@@ -35,7 +31,7 @@ func (t *telegramService) Send(p *tgdelivery.Payload) error {
 	return nil
 }
 
-func (t *telegramService) FromTemplate(p *tgdelivery.Payload) (string, error) {
+func (t *telegramService) FromTemplate(p *tgdelivery.Payload) string {
 	template := tgdelivery.MessageTemplate
 
 	var payTranslate string
@@ -85,5 +81,5 @@ func (t *telegramService) FromTemplate(p *tgdelivery.Payload) (string, error) {
 	template = strings.Replace(template, "fl", fmt.Sprintf("%d", p.Order.DeliveryDetails.FlatCall), -1)
 	template = strings.Replace(template, "time", p.Order.DeliveryDetails.DeliveredAt.Format("15:04 02.01"), -1)
 
-	return template, nil
+	return template
 }

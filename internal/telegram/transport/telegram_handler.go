@@ -1,40 +1,41 @@
-package tghandler
+package transport
 
 import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"go.uber.org/zap"
 )
 
-type TgHandler struct {
+type telegramHandler struct {
 	logger *zap.Logger
 	bot    *tg.BotAPI
 }
 
-func NewTgHandler(logger *zap.Logger, bot *tg.BotAPI) *TgHandler {
-	return &TgHandler{logger: logger, bot: bot}
+func NewTgHandler(logger *zap.Logger, bot *tg.BotAPI) telegram.Transport {
+	return &telegramHandler{logger: logger, bot: bot}
 }
 
-func (h *TgHandler) ListenForUpdates(bot *tg.BotAPI, cfg tg.UpdateConfig) {
+func (h *telegramHandler) ListenForUpdates(bot *tg.BotAPI, cfg tg.UpdateConfig) {
 	updates := bot.GetUpdatesChan(cfg)
 	for u := range updates {
-		h.Map(&u)
+		h.handle(&u)
 	}
 }
 
-func (h *TgHandler) Map(u *tg.Update) {
+func (h *telegramHandler) handle(u *tg.Update) {
 	if u.Message != nil {
-		h.HandleMessage(u.Message)
+		h.handleMessage(u.Message)
 	}
 	if u.CallbackQuery != nil {
-		h.HandleCallback(u.CallbackQuery)
+		h.handleCallback(u.CallbackQuery)
 	}
 }
 
-func (h *TgHandler) HandleCallback(cb *tg.CallbackQuery) {
+func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
 
 }
 
 //todo: return err
-func (h *TgHandler) HandleMessage(m *tg.Message) {
+func (h *telegramHandler) handleMessage(m *tg.Message) {
 	h.bot.Send(tg.NewMessage(m.Chat.ID, "Hello:D"))
 }
