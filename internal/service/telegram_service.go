@@ -27,7 +27,8 @@ func (t *telegramService) Send(p *tgdelivery.Payload) error {
 
 	text, _ := t.FromTemplate(p)
 	msg := tg.NewMessage(ChatId, text)
-	if _, err := t.bot.Send(msg); err != nil {
+	_, err := t.bot.Send(msg)
+	if err != nil {
 		return err
 	}
 

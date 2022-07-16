@@ -1,36 +1,40 @@
 package service
 
 import (
-	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
+	"github.com/sonyamoonglade/delivery-service/internal/handler/dto"
 	"go.uber.org/zap"
 )
 
 type DeliveryStorage interface {
-	Create(d *Delivery) (bool, error)
+	Create(d *dto.CreateDeliveryDto) (int64, error)
 	Reserve(id int64) (bool, error)
 }
 
 type Delivery interface {
-	NewDeliveryMessage(v *tgdelivery.Payload) (*tg.Chattable, error)
+	Create(dto *dto.CreateDeliveryDto) (int64, error)
 	Reserve(id int64) (bool, error)
 }
 
 type deliveryService struct {
 	logger  *zap.Logger
-	storage *DeliveryStorage
+	storage DeliveryStorage
 }
 
-func (d deliveryService) NewDeliveryMessage(v *tgdelivery.Payload) (*tg.Chattable, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *deliveryService) Create(dto *dto.CreateDeliveryDto) (int64, error) {
+
+	deliveryID, err := s.storage.Create(dto)
+	if err != nil {
+		return 0, err
+	}
+
+	return deliveryID, nil
 }
 
-func (d deliveryService) Reserve(id int64) (bool, error) {
+func (s *deliveryService) Reserve(id int64) (bool, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
 func NewDeliveryService(logger *zap.Logger, storage DeliveryStorage) *deliveryService {
-	return &deliveryService{logger: logger, storage: &storage}
+	return &deliveryService{logger: logger, storage: storage}
 }

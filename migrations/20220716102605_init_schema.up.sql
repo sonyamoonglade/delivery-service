@@ -1,5 +1,7 @@
 
+
 CREATE TYPE "pay" AS ENUM('cash','paid','withCard');
+
 
 CREATE TABLE IF NOT EXISTS "runner"(
     "runner_id" SERIAL PRIMARY KEY NOT NULL,
@@ -19,7 +21,7 @@ CREATE TABLE IF NOT EXISTS "delivery"(
     "order_id" INTEGER NOT NULL,
     "runner_id" INTEGER NOT NULL,
     "reserved_at" TIMESTAMP DEFAULT NULL,
-    "created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
+    "created_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'utc'),
     "is_free" BOOLEAN NOT NULL DEFAULT TRUE,
     "pay" pay NOT NULL
 );

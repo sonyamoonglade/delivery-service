@@ -2,7 +2,7 @@ package storage
 
 import (
 	"github.com/jmoiron/sqlx"
-	"github.com/sonyamoonglade/delivery-service/internal/service"
+	"github.com/sonyamoonglade/delivery-service/internal/handler/dto"
 	"go.uber.org/zap"
 )
 
@@ -11,7 +11,7 @@ type deliveryStorage struct {
 	logger *zap.Logger
 }
 
-func (d2 deliveryStorage) Create(d *service.Delivery) (bool, error) {
+func (d2 deliveryStorage) Create(dto *dto.CreateDeliveryDto) (int64, error) {
 	//TODO implement me
 	panic("implement me")
 }
