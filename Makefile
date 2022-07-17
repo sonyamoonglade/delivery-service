@@ -15,6 +15,9 @@ migrate-down:
 run-db:
 	docker-compose -f docker/docker-compose.yaml up --detach
 
+stop-db:
+	docker-compose -f docker/docker-compose.yaml down
+
 local-migrate-up:
 	migrate -path migrations -database "postgresql://dlvuser:dlvuserpwd@localhost:5433/delivery?sslmode=disable" -verbose up
 
