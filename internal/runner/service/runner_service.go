@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
@@ -18,6 +20,16 @@ func (s *runnerService) IsRunner(dto dto.IsRunnerDto) (bool, error) {
 }
 
 func (s *runnerService) Register(dto dto.RegisterRunnerDto) error {
+
+	var valRes bool
+	fmt.Println(tgdelivery.ValidateUsername(dto.Username))
+	if valRes = tgdelivery.ValidateUsername(dto.Username); !valRes {
+
+		return httpErrors.BadRequestError(httpErrors.InvalidUsername)
+	}
+	if valRes = tgdelivery.ValidatePhoneNumber(dto.PhoneNumber); !valRes {
+		return httpErrors.BadRequestError(httpErrors.InvalidPhoneNumber)
+	}
 
 	runnerID, err := s.storage.Register(dto)
 	if err != nil {

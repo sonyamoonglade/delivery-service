@@ -33,8 +33,15 @@ func ValidatePhoneNumber(v string) bool {
 
 func ValidateUsername(v string) bool {
 	spl := strings.Split(v, " ")
-	if len(spl) != 2 || (len(spl[0]) < 3 || len(spl[1]) < 3) {
+	min := 3
+	if len(spl) != 2 {
 		return false
+	}
+	for _, w := range spl {
+		wordSpl := strings.Split(w, "")
+		if len(wordSpl) < min {
+			return false
+		}
 	}
 
 	return true

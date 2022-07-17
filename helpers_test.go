@@ -65,7 +65,10 @@ func TestValidateUsername(test *testing.T) {
 		{name: "Ars Bob", ok: true},
 		{name: "As ob", ok: false},
 		{name: "Arss Bobs", ok: true},
-		{name: "Arssa Bobsd", ok: true},
+		{name: "Иван Си", ok: false},
+		{name: "Ао Григое", ok: false},
+		{name: "Аоы Гри", ok: true},
+		{name: "Abы CXш", ok: true},
 		{name: "", ok: false},
 	}
 	for _, t := range tt {
