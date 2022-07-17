@@ -3,7 +3,8 @@ package runner
 import "github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 
 type Service interface {
-	IsRunner(dto dto.IsRunnerDto) (bool, error)
+	IsRunner(usrPhoneNumber string) (int64, error)
 	Register(dto dto.RegisterRunnerDto) error
-	Ban(id int64) error
+	Ban(runnerID int64) error
+	BeginWork(dto dto.RunnerBeginWorkDto) error
 }

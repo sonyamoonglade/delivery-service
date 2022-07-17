@@ -56,7 +56,7 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 	telegramMsg := h.telegramService.FromTemplate(&payload)
 	h.logger.Debug("formatted telegram template")
 
-	err = h.telegramService.Send(telegramMsg)
+	err = h.telegramService.Send(telegramMsg, deliveryID)
 	if err != nil {
 
 		code, R := httpErrors.Response(err)
@@ -73,6 +73,6 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	h.logger.Debug("successfully sent telegram msg")
-
+	w.WriteHeader(201)
 	return
 }

@@ -13,11 +13,28 @@ type runnerStorage struct {
 	db *sqlx.DB
 }
 
-const runnerTable = "runner"
+func NewRunnerStorage(db *sqlx.DB) runner.Storage {
+	return &runnerStorage{db: db}
+}
 
-func (s *runnerStorage) IsRunner(dto dto.IsRunnerDto) (bool, error) {
-	//TODO implement me
-	panic("implement me")
+const (
+	runnerTable         = "runner"
+	telegramRunnerTable = "telegram_runner"
+)
+
+func (s *runnerStorage) IsRunner(usrPhoneNumber string) (int64, error) {
+
+	q := fmt.Sprintf("SELECT runner_id FROM %s WHERE phone_number = $1", runnerTable)
+	row := s.db.QueryRowx(q, usrPhoneNumber)
+
+	var runnerID int64
+
+	if err := row.Scan(&runnerID); err != nil {
+		return 0, err
+	}
+
+	return runnerID, nil
+
 }
 
 func (s *runnerStorage) Register(dto dto.RegisterRunnerDto) (int64, error) {
@@ -37,11 +54,19 @@ func (s *runnerStorage) Register(dto dto.RegisterRunnerDto) (int64, error) {
 	return runnerID, nil
 }
 
-func (s *runnerStorage) Ban(id int64) (int64, error) {
+func (s *runnerStorage) Ban(runnerID int64) (int64, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func NewRunnerStorage(db *sqlx.DB) runner.Storage {
-	return &runnerStorage{db: db}
+func (s *runnerStorage) BeginWork(dto dto.RunnerBeginWorkDto) error {
+
+	q := fmt.Sprintf("INSERT INTO %s (runner_id, telegram_id) VALUES ($1,$2) ON CONFLICT DO NOTHING", telegramRunnerTable)
+	_, err := s.db.Queryx(q, dto.RunnerID, dto.TelegramUserID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }

@@ -11,6 +11,7 @@ import (
 )
 
 const ChatId = -784171010
+const buttonText = "Взять 🚚"
 
 type telegramService struct {
 	bot    *tg.BotAPI
@@ -21,23 +22,26 @@ func NewTelegramService(logger *zap.Logger, bot *tg.BotAPI) telegram.Service {
 	return &telegramService{bot: bot, logger: logger}
 }
 
-func (s *telegramService) Send(text string) error {
+func (s *telegramService) Send(text string, deliveryID int64) error {
 	msg := tg.NewMessage(ChatId, text)
+	msg.ReplyMarkup = s.genKeyboard(deliveryID)
+
 	_, err := s.bot.Send(msg)
 	if err != nil {
 		s.logger.Error(err.Error())
 		return tgErrors.InternalError
 	}
+
 	s.logger.Debug("Sent telegram message successfully")
 	return nil
 }
 
-func (s *telegramService) genKeyboard(deliveryID int) tg.InlineKeyboardMarkup {
+func (s *telegramService) genKeyboard(deliveryID int64) tg.InlineKeyboardMarkup {
 
 	data := fmt.Sprintf("reserve %d", deliveryID)
 
 	reserveButton := tg.InlineKeyboardButton{
-		Text:         "Взять",
+		Text:         buttonText,
 		CallbackData: &data,
 	}
 	row := []tg.InlineKeyboardButton{reserveButton}
@@ -97,4 +101,8 @@ func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
 	template = strings.Replace(template, "time", p.Order.DeliveryDetails.DeliveredAt.Format("15:04 02.01"), -1)
 
 	return template
+}
+
+func (s *telegramService) StartMessage() string {
+	return "Привет!"
 }

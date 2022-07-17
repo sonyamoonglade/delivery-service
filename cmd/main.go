@@ -70,7 +70,7 @@ func main() {
 	runnerService := runnService.NewRunnerService(logger, runnerStorage)
 
 	//Initialize transport
-	telegramHandler := tgTransport.NewTgHandler(logger, bot)
+	telegramHandler := tgTransport.NewTgHandler(logger, bot, runnerService)
 	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, telegramService)
 	runnerHandler := runnHttp.NewRunnerHandler(logger, runnerService)
 

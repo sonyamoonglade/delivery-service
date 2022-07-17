@@ -1,11 +1,14 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
+	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
 )
 
@@ -14,9 +17,18 @@ type runnerService struct {
 	storage runner.Storage
 }
 
-func (s *runnerService) IsRunner(dto dto.IsRunnerDto) (bool, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *runnerService) IsRunner(usrPhoneNumber string) (int64, error) {
+
+	runnerID, err := s.storage.IsRunner(usrPhoneNumber)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			//todo: custom tg error
+			return 0, errors.New(tgErrors.RunnerDoesNotExist)
+		}
+		return 0, err
+	}
+	//todo: throw custom tg_error here!
+	return runnerID, nil
 }
 
 func (s *runnerService) Register(dto dto.RegisterRunnerDto) error {
@@ -44,7 +56,17 @@ func (s *runnerService) Register(dto dto.RegisterRunnerDto) error {
 
 }
 
-func (s *runnerService) Ban(id int64) error {
+func (s *runnerService) BeginWork(dto dto.RunnerBeginWorkDto) error {
+
+	err := s.storage.BeginWork(dto)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *runnerService) Ban(runnerID int64) error {
 	//TODO implement me
 	panic("implement me")
 }
