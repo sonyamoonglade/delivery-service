@@ -16,15 +16,15 @@ type Delivery struct {
 }
 
 type BaseDelivery struct {
-	DeliveryID int64          `json:"delivery_id" db:"delivery_id"`
+	DeliveryID int64          `json:"delivery_id,omitempty" db:"delivery_id"`
 	OrderID    int64          `json:"order_id" db:"order_id"`
-	CreatedAt  time.Time      `json:"created_at" db:"created_at"`
+	CreatedAt  time.Time      `json:"created_at,omitempty" db:"created_at"`
 	IsFree     bool           `json:"is_free" db:"is_free"`
 	Pay        tgdelivery.Pay `json:"pay" db:"pay"`
 }
 
 type ReservedDelivery struct {
-	DeliveryID int64     `json:"delivery_id" db:"delivery_id"`
+	DeliveryID int64     `json:"delivery_id,omitempty" db:"delivery_id"`
 	RunnerID   int64     `json:"runner_id" db:"runner_id"`
 	ReservedAt time.Time `json:"reserved_at" db:"reserved_at"`
 }

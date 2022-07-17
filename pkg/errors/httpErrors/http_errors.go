@@ -12,6 +12,9 @@ const (
 	InternalServerError   = "Internal server error"
 	DeliveryAlreadyExists = "Delivery already exists"
 	DeliveryDoesNotExist  = "Delivery does not exist"
+	RunnerAlreadyExists   = "Runner already exists"
+	RunnerDoesNotExist    = "Runner does not exist"
+	YouAreNotARunner      = "You are not a runner"
 )
 
 type HttpError struct {
@@ -80,7 +83,7 @@ func parseError(e error) HttpError {
 
 	switch {
 
-	case strings.Contains(strings.ToLower(e.Error()), "missing"):
+	case strings.Contains(strings.ToLower(e.Error()), "validation"):
 		return BadRequestError(e.Error())
 	case strings.Contains(strings.ToLower(e.Error()), "internal telegram"):
 		return InternalTelegramError()

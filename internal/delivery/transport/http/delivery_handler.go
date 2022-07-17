@@ -2,6 +2,7 @@ package httptransport
 
 import (
 	"github.com/julienschmidt/httprouter"
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
@@ -29,7 +30,9 @@ func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
 }
 
 func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	payload, err := binder.Bind(req.Body)
+	var payload tgdelivery.Payload
+
+	err := binder.Bind(req.Body, &payload)
 	if err != nil {
 		code, R := httpErrors.Response(err)
 		responder.JSON(w, code, R)
@@ -50,7 +53,7 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 	}
 	h.logger.Debug("created delivery in database")
 
-	telegramMsg := h.telegramService.FromTemplate(payload)
+	telegramMsg := h.telegramService.FromTemplate(&payload)
 	h.logger.Debug("formatted telegram template")
 
 	err = h.telegramService.Send(telegramMsg)
