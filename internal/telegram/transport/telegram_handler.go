@@ -7,8 +7,9 @@ import (
 )
 
 type telegramHandler struct {
-	logger *zap.Logger
-	bot    *tg.BotAPI
+	logger          *zap.Logger
+	bot             *tg.BotAPI
+	telegramService telegram.Service
 }
 
 func NewTgHandler(logger *zap.Logger, bot *tg.BotAPI) telegram.Transport {

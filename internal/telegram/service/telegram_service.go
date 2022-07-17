@@ -17,7 +17,7 @@ type telegramService struct {
 	logger *zap.Logger
 }
 
-func NewTelegramService(logger *zap.Logger, bot *tg.BotAPI) telegram.Telegram {
+func NewTelegramService(logger *zap.Logger, bot *tg.BotAPI) telegram.Service {
 	return &telegramService{bot: bot, logger: logger}
 }
 
@@ -30,6 +30,20 @@ func (s *telegramService) Send(text string) error {
 	}
 	s.logger.Debug("Sent telegram message successfully")
 	return nil
+}
+
+func (s *telegramService) genKeyboard(deliveryID int) tg.InlineKeyboardMarkup {
+
+	data := fmt.Sprintf("reserve %d", deliveryID)
+
+	reserveButton := tg.InlineKeyboardButton{
+		Text:         "Взять",
+		CallbackData: &data,
+	}
+	row := []tg.InlineKeyboardButton{reserveButton}
+
+	return tg.NewInlineKeyboardMarkup(row)
+
 }
 
 func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {

@@ -37,12 +37,6 @@ type Mark struct {
 	IsImportant bool      `json:"is_important"`
 }
 
-type Runner struct {
-	RunnerID    int64
-	Username    string
-	PhoneNumber string
-}
-
 type Pay string
 
 var (

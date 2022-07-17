@@ -1,4 +1,4 @@
-package http
+package httptransport
 
 import (
 	"github.com/julienschmidt/httprouter"
@@ -12,23 +12,23 @@ import (
 	"net/http"
 )
 
-type DeliveryHandler struct {
+type deliveryHandler struct {
 	logger          *zap.Logger
-	deliveryService delivery.Delivery
-	telegramService telegram.Telegram
+	deliveryService delivery.Service
+	telegramService telegram.Service
 }
 
-func NewDeliveryHandler(logger *zap.Logger, delivery delivery.Delivery, tg telegram.Telegram) delivery.Transport {
-	return &DeliveryHandler{logger: logger, deliveryService: delivery, telegramService: tg}
+func NewDeliveryHandler(logger *zap.Logger, delivery delivery.Service, tg telegram.Service) delivery.Transport {
+	return &deliveryHandler{logger: logger, deliveryService: delivery, telegramService: tg}
 }
 
-func (h *DeliveryHandler) RegisterRoutes(r *httprouter.Router) {
+func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
 
 	r.POST("/api/delivery", h.CreateDelivery)
 
 }
 
-func (h *DeliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	payload, err := binder.Bind(req.Body)
 	if err != nil {
 		code, R := httpErrors.Response(err)

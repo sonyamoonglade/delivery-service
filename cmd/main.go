@@ -6,11 +6,14 @@ import (
 	"github.com/julienschmidt/httprouter"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/config"
-	service2 "github.com/sonyamoonglade/delivery-service/internal/delivery/service"
-	storage2 "github.com/sonyamoonglade/delivery-service/internal/delivery/storage"
-	apihandler "github.com/sonyamoonglade/delivery-service/internal/delivery/transport/http"
-	"github.com/sonyamoonglade/delivery-service/internal/telegram/service"
-	tghandler "github.com/sonyamoonglade/delivery-service/internal/telegram/transport"
+	dlvService "github.com/sonyamoonglade/delivery-service/internal/delivery/service"
+	dlvStorage "github.com/sonyamoonglade/delivery-service/internal/delivery/storage"
+	dlvHttp "github.com/sonyamoonglade/delivery-service/internal/delivery/transport/http"
+	runnService "github.com/sonyamoonglade/delivery-service/internal/runner/service"
+	runnStorage "github.com/sonyamoonglade/delivery-service/internal/runner/storage"
+	runnHttp "github.com/sonyamoonglade/delivery-service/internal/runner/transport/http"
+	tgService "github.com/sonyamoonglade/delivery-service/internal/telegram/service"
+	tgTransport "github.com/sonyamoonglade/delivery-service/internal/telegram/transport"
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"go.uber.org/zap"
 	"log"
@@ -57,21 +60,29 @@ func main() {
 	}
 	logger.Info("Bot has initialized")
 
-	tgHandler := tghandler.NewTgHandler(logger, bot)
-	tgService := service.NewTelegramService(logger, bot)
-	logger.Info("Telegram composite initialized")
+	//Initialize storage
+	runnerStorage := runnStorage.NewRunnerStorage(db)
+	deliveryStorage := dlvStorage.NewDeliveryStorage(db)
 
-	go tgHandler.ListenForUpdates(bot, updCfg)
-	logger.Info("Bot is listening to updates")
+	//Initialize service
+	deliveryService := dlvService.NewDeliveryService(logger, deliveryStorage)
+	telegramService := tgService.NewTelegramService(logger, bot)
+	runnerService := runnService.NewRunnerService(logger, runnerStorage)
 
-	deliveryStorage := storage2.NewDeliveryStorage(logger, db)
-	deliveryService := service2.NewDeliveryService(logger, deliveryStorage)
-	deliveryHandler := apihandler.NewDeliveryHandler(logger, deliveryService, tgService)
-	logger.Info("Delivery composite initialized")
+	//Initialize transport
+	telegramHandler := tgTransport.NewTgHandler(logger, bot)
+	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, telegramService)
+	runnerHandler := runnHttp.NewRunnerHandler(logger, runnerService)
 
+	//Initialize router
 	router := httprouter.New()
+
 	deliveryHandler.RegisterRoutes(router)
+	runnerHandler.RegisterRoutes(router)
 	logger.Info("API Routes has initialized")
+
+	go telegramHandler.ListenForUpdates(bot, updCfg)
+	logger.Info("Bot is listening to updates")
 
 	server := tgdelivery.NewServerWithConfig(appCfg, router)
 	logger.Info(fmt.Sprintf("API server is listening on port %s", appCfg.GetString("app.port")))

@@ -12,7 +12,7 @@ type deliveryService struct {
 	storage delivery.Storage
 }
 
-func NewDeliveryService(logger *zap.Logger, storage delivery.Storage) delivery.Delivery {
+func NewDeliveryService(logger *zap.Logger, storage delivery.Storage) delivery.Service {
 	return &deliveryService{logger: logger, storage: storage}
 }
 
