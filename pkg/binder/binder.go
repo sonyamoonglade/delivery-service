@@ -7,6 +7,7 @@ import (
 	"github.com/fatih/structs"
 	"github.com/go-playground/validator/v10"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
+	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"io"
 	"reflect"
 	"strings"
@@ -113,13 +114,13 @@ func Bind(r io.Reader, out interface{}) error {
 	typDest := reflect.New(typ).Interface()
 
 	if err = json.Unmarshal(bytes, &typDest); err != nil {
-		return err
+		return httpErrors.BadRequestError(httpErrors.BadRequest)
 	}
 	//Local reflect.Value
 	localV := reflect.Indirect(reflect.ValueOf(typDest).Elem())
 	ptr := reflect.Indirect(reflect.ValueOf(typDest)).Interface()
+
 	err = v.Struct(ptr)
-	fmt.Println(ptr)
 	if err != nil {
 		msg := "Validation error."
 
@@ -140,7 +141,6 @@ func Bind(r io.Reader, out interface{}) error {
 				Err:     bindingError,
 			}
 		}
-
 	}
 
 	//Outer reflect.Value (comes with 'out')

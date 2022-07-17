@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	BadRequest            = "Bad request"
 	InternalServerError   = "Internal server error"
 	DeliveryAlreadyExists = "Delivery already exists"
 	DeliveryDoesNotExist  = "Delivery does not exist"
