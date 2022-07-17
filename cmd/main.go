@@ -20,6 +20,7 @@ import (
 func main() {
 
 	logger, err := zap.NewProduction()
+
 	if err != nil {
 		log.Println(err.Error())
 	}

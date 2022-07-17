@@ -1,10 +1,9 @@
 package service
 
 import (
-	"errors"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
-	api_erros "github.com/sonyamoonglade/delivery-service/pkg/errors/api"
+	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"go.uber.org/zap"
 )
 
@@ -20,12 +19,13 @@ func NewDeliveryService(logger *zap.Logger, storage delivery.Storage) delivery.D
 func (s *deliveryService) Create(dto *dto.CreateDeliveryDto) (int64, error) {
 
 	deliveryID, err := s.storage.Create(dto)
-	//todo: custom error
+
+	// Delivery already exists
 	if deliveryID == 0 {
-		return 0, errors.New(api_erros.DeliveryAlreadyExists)
+		return 0, httpErrors.ConflictError(httpErrors.DeliveryAlreadyExists)
 	}
 	if err != nil {
-		return 0, err
+		return 0, httpErrors.InternalError()
 	}
 
 	return deliveryID, nil
@@ -38,12 +38,14 @@ func (s *deliveryService) Reserve(id int64) (bool, error) {
 
 func (s *deliveryService) Delete(id int64) error {
 
-	deliveryID, err := s.storage.Delete(id)
+	ok, err := s.storage.Delete(id)
+
 	if err != nil {
-		return err
+		return httpErrors.InternalError()
 	}
-	if deliveryID == 0 {
-		// throw err here
+	// Delivery does not exist
+	if !ok {
+		return httpErrors.NotFoundError(httpErrors.DeliveryDoesNotExist)
 	}
 
 	return nil

@@ -10,21 +10,14 @@ import (
 	"strings"
 )
 
-var (
-	//bindingError shows that some value is missing
-	bindingError = "invalid request body"
-)
-
 type BindingError struct {
 	Message string
 	Err     error
 }
 
-func (e *BindingError) Unwrap() error {
-	return e.Err
-}
+var bindingError = errors.New("binding error")
 
-func (e *BindingError) Error() string {
+func (e BindingError) Error() string {
 	return e.Message
 }
 
@@ -45,8 +38,8 @@ func Bind(r io.Reader) (*tgdelivery.Payload, error) {
 
 	if p.Order == nil || p.User == nil {
 		return nil, &BindingError{
-			Message: "Order or User fields are missing",
-			Err:     errors.New(bindingError),
+			Err:     bindingError,
+			Message: "order or user fields are missing",
 		}
 	}
 
@@ -84,8 +77,8 @@ func Bind(r io.Reader) (*tgdelivery.Payload, error) {
 			msg += "fields are missing in request body"
 		}
 		return nil, &BindingError{
+			Err:     bindingError,
 			Message: msg,
-			Err:     errors.New(bindingError),
 		}
 	}
 

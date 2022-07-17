@@ -1,10 +1,7 @@
-package tg_errors
+package tgErrors
 
-type TelegramError struct {
-	Message string
-	Err     error
-}
+import "errors"
 
-func (e TelegramError) Error() string {
-	return e.Message
-}
+var (
+	InternalError = errors.New("internal telegram error")
+)

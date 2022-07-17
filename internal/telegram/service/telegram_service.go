@@ -5,6 +5,7 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
+	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
 	"strings"
 )
@@ -20,18 +21,18 @@ func NewTelegramService(logger *zap.Logger, bot *tg.BotAPI) telegram.Telegram {
 	return &telegramService{bot: bot, logger: logger}
 }
 
-func (t *telegramService) Send(text string) error {
-
+func (s *telegramService) Send(text string) error {
 	msg := tg.NewMessage(ChatId, text)
-	_, err := t.bot.Send(msg)
+	_, err := s.bot.Send(msg)
 	if err != nil {
-		return err
+		s.logger.Error(err.Error())
+		return tgErrors.InternalError
 	}
-
+	s.logger.Debug("Sent telegram message successfully")
 	return nil
 }
 
-func (t *telegramService) FromTemplate(p *tgdelivery.Payload) string {
+func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
 	template := tgdelivery.MessageTemplate
 
 	var payTranslate string

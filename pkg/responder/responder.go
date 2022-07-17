@@ -5,12 +5,12 @@ import (
 	"net/http"
 )
 
-type R map[string]string
+type R map[string]interface{}
 
-func JSON(r http.ResponseWriter, v R, code int) {
-	r.Header().Set("Content-Type", "application/json")
-	r.WriteHeader(code)
+func JSON(w http.ResponseWriter, code int, v R) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
 	bytes, _ := json.Marshal(v)
-	r.Write(bytes)
+	w.Write(bytes)
 
 }
