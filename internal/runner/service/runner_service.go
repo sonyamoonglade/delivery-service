@@ -17,18 +17,35 @@ type runnerService struct {
 	storage runner.Storage
 }
 
+func NewRunnerService(logger *zap.Logger, storage runner.Storage) runner.Service {
+	return &runnerService{logger: logger, storage: storage}
+}
+
 func (s *runnerService) IsRunner(usrPhoneNumber string) (int64, error) {
 
 	runnerID, err := s.storage.IsRunner(usrPhoneNumber)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			//todo: custom tg error
-			return 0, errors.New(tgErrors.RunnerDoesNotExist)
+			return 0, tgErrors.RunnerDoesNotExist(usrPhoneNumber)
 		}
 		return 0, err
 	}
 	//todo: throw custom tg_error here!
 	return runnerID, nil
+}
+
+func (s *runnerService) IsKnownByTelegramId(tgUsrID int64) (bool, error) {
+	ok, err := s.storage.IsKnownByTelegramId(tgUsrID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return ok, nil
+
 }
 
 func (s *runnerService) Register(dto dto.RegisterRunnerDto) error {
@@ -69,8 +86,4 @@ func (s *runnerService) BeginWork(dto dto.RunnerBeginWorkDto) error {
 func (s *runnerService) Ban(runnerID int64) error {
 	//TODO implement me
 	panic("implement me")
-}
-
-func NewRunnerService(logger *zap.Logger, storage runner.Storage) runner.Service {
-	return &runnerService{logger: logger, storage: storage}
 }
