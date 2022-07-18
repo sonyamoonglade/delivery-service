@@ -4,12 +4,17 @@ import (
 	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sonyamoonglade/delivery-service/internal/delivery"
+	dlvDto "github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type telegramHandler struct {
@@ -17,10 +22,11 @@ type telegramHandler struct {
 	bot             *tg.BotAPI
 	telegramService telegram.Service
 	runnerService   runner.Service
+	deliveryService delivery.Service
 }
 
-func NewTgHandler(logger *zap.Logger, bot *tg.BotAPI, run runner.Service) telegram.Transport {
-	return &telegramHandler{logger: logger, bot: bot, runnerService: run}
+func NewTgHandler(logger *zap.Logger, bot *tg.BotAPI, run runner.Service, del delivery.Service) telegram.Transport {
+	return &telegramHandler{logger: logger, bot: bot, runnerService: run, deliveryService: del}
 }
 
 func (h *telegramHandler) ListenForUpdates(bot *tg.BotAPI, cfg tg.UpdateConfig) {
@@ -40,8 +46,31 @@ func (h *telegramHandler) handle(u *tg.Update) {
 }
 
 func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
-	fmt.Println(cb.From)
+	usrID := cb.From.ID
+	data := cb.Data
 
+	idStr := strings.Split(data, " ")[1]
+	deliveryID, _ := strconv.ParseInt(idStr, 10, 64)
+
+	runnerID, err := h.runnerService.GetByTelegramId(usrID)
+
+	inp := dlvDto.ReserveDeliveryDto{
+		RunnerID:   runnerID,
+		DeliveryID: deliveryID,
+	}
+	ok, err := h.deliveryService.Reserve(inp)
+	if err != nil {
+		//todo: handle err
+
+		return
+	}
+	if !ok {
+		//todo:handle
+
+		return
+	}
+
+	//todo:update message with check mark, send delivery to pm by usrID
 }
 
 //todo: return err
@@ -109,8 +138,10 @@ func (h *telegramHandler) handleMessage(m *tg.Message) {
 		msg := tg.NewMessage(chatID, "Тебе сюда 😇")
 		kb := genBotLink()
 		msg.ReplyMarkup = kb
-		h.bot.Send(msg)
-
+		sent, _ := h.bot.Send(msg)
+		time.Sleep(time.Second * 2)
+		m := tg.NewEditMessageText(chatID, sent.MessageID, "abccd")
+		h.bot.Send(m)
 		return
 	}
 	//todo: parse /start and return command array

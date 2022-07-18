@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -54,7 +55,59 @@ func (s *deliveryStorage) Create(dto *dto.CreateDeliveryDto) (int64, error) {
 	return deliveryID, nil
 }
 
-func (s *deliveryStorage) Reserve(id int64) (bool, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *deliveryStorage) Reserve(dto dto.ReserveDeliveryDto) (bool, error) {
+
+	var free bool
+
+	tx, err := s.db.BeginTxx(context.Background(), &sql.TxOptions{
+		Isolation: sql.LevelDefault,
+		ReadOnly:  false,
+	})
+	if err != nil {
+		if err = tx.Rollback(); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+
+	q := fmt.Sprintf("SELECT is_free FROM %s WHERE delivery_id = $1", deliveryTable)
+	row := tx.QueryRowx(q, dto.DeliveryID)
+	if err = row.Scan(&free); err != nil {
+		if err = tx.Rollback(); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+	//Make sure delivery is 100% free to reserve. If not -> rollback
+	if free == false {
+		if err = tx.Rollback(); err != nil {
+			return false, err
+		}
+		return false, nil
+	}
+
+	q1 := fmt.Sprintf("UPDATE %s SET is_free = true THEN FALSE ELSE DO NOTHING WHERE delivery_id = $1", deliveryTable)
+	_, err = tx.Exec(q1, dto.DeliveryID)
+	if err != nil {
+		if err = tx.Rollback(); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+	q2 := fmt.Sprintf("INSERT INTO %s (delivery_id, runner_id) VALUES ($1,$2)", reservedTable)
+	_, err = tx.Exec(q2, dto.DeliveryID, dto.RunnerID)
+	if err != nil {
+		if err = tx.Rollback(); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		if err = tx.Rollback(); err != nil {
+			return false, err
+		}
+		return false, err
+	}
+	return true, nil
 }

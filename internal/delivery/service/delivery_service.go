@@ -4,6 +4,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
+	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
 )
 
@@ -31,14 +32,24 @@ func (s *deliveryService) Create(dto *dto.CreateDeliveryDto) (int64, error) {
 	return deliveryID, nil
 }
 
-func (s *deliveryService) Reserve(id int64) (bool, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *deliveryService) Reserve(dto dto.ReserveDeliveryDto) (bool, error) {
+
+	ok, err := s.storage.Reserve(dto)
+	if err != nil {
+		return false, err
+	}
+
+	if ok == false {
+		return false, tgErrors.DeliveryHasAlreadyReserved(dto.DeliveryID)
+	}
+
+	return true, nil
+
 }
 
-func (s *deliveryService) Delete(id int64) error {
+func (s *deliveryService) Delete(deliveryID int64) error {
 
-	ok, err := s.storage.Delete(id)
+	ok, err := s.storage.Delete(deliveryID)
 
 	if err != nil {
 		return httpErrors.InternalError()

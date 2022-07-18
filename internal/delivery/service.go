@@ -4,6 +4,6 @@ import "github.com/sonyamoonglade/delivery-service/internal/delivery/transport/d
 
 type Service interface {
 	Create(dto *dto.CreateDeliveryDto) (int64, error)
-	Reserve(id int64) (bool, error)
-	Delete(id int64) error
+	Reserve(dto dto.ReserveDeliveryDto) (bool, error)
+	Delete(deliveryID int64) error
 }

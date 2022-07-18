@@ -31,7 +31,7 @@ CREATE INDEX "order_id_idx" ON "delivery" ("order_id");
 
 
 CREATE TABLE IF NOT EXISTS "reserved"(
-    "delivery_id" SERIAL PRIMARY KEY NOT NULL,
+    "delivery_id" INTEGER PRIMARY KEY NOT NULL,
     "runner_id" INTEGER NOT NULL,
     "reserved_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'utc')
 );

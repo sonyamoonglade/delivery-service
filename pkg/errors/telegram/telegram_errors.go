@@ -27,3 +27,7 @@ func NewTelegramError(e string) TelegramError {
 func RunnerDoesNotExist(phoneNumber string) TelegramError {
 	return NewTelegramError(fmt.Sprintf(templates.RunnerDoesNotExist, phoneNumber))
 }
+
+func DeliveryHasAlreadyReserved(deliveryID int64) TelegramError {
+	return NewTelegramError(fmt.Sprintf(templates.DeliveryHasAlreadyReserved, deliveryID))
+}
