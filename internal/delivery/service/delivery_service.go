@@ -6,6 +6,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
+	"time"
 )
 
 type deliveryService struct {
@@ -32,17 +33,18 @@ func (s *deliveryService) Create(dto *dto.CreateDeliveryDto) (int64, error) {
 	return deliveryID, nil
 }
 
-func (s *deliveryService) Reserve(dto dto.ReserveDeliveryDto) (bool, error) {
-	ok, err := s.storage.Reserve(dto)
+func (s *deliveryService) Reserve(dto dto.ReserveDeliveryDto) (time.Time, error) {
+	reservedAt, err := s.storage.Reserve(dto)
 	if err != nil {
-		return false, err
+		return time.Time{}, err
 	}
 
-	if ok == false {
-		return false, tgErrors.DeliveryHasAlreadyReserved(dto.DeliveryID)
+	//Signals that delivery has already reserved (see storage reserve impl.)
+	if reservedAt.IsZero() == true {
+		return time.Time{}, tgErrors.DeliveryHasAlreadyReserved(dto.DeliveryID)
 	}
 
-	return true, nil
+	return reservedAt, nil
 
 }
 

@@ -1,8 +1,12 @@
 package bot
 
 import (
+	"encoding/json"
+	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
+	"time"
 )
 
 var botLink string
@@ -70,4 +74,21 @@ func InternalErrorButton() tg.InlineKeyboardMarkup {
 	}
 	row := []tg.InlineKeyboardButton{b}
 	return tg.NewInlineKeyboardMarkup(row)
+}
+
+func CompleteDeliveryButton(data *tgdelivery.CallbackData) tg.InlineKeyboardMarkup {
+
+	bytes, _ := json.Marshal(data)
+	dataStr := string(bytes)
+
+	b := tg.InlineKeyboardButton{
+		Text:         templates.Complete,
+		CallbackData: &dataStr,
+	}
+	row := []tg.InlineKeyboardButton{b}
+	return tg.NewInlineKeyboardMarkup(row)
+}
+
+func AfterReserveReplyText(deliveryID int64, reservedAt time.Time) string {
+	return fmt.Sprintf(templates.AfterReserveReply, reservedAt.Format("15:04 02.01"), deliveryID)
 }

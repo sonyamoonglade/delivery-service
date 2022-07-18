@@ -89,16 +89,11 @@ func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
 			RunnerID:   runnerID,
 			DeliveryID: inp.DeliveryID,
 		}
-		ok, err := h.deliveryService.Reserve(rsrvInp)
+		reservedAt, err := h.deliveryService.Reserve(rsrvInp)
 		if err != nil {
 			h.ResponseWithError(err, usrID)
 			h.bot.Send(response)
 			h.logger.Error(err.Error())
-			return
-		}
-		if !ok {
-			//	//todo:handle
-
 			return
 		}
 
@@ -111,7 +106,20 @@ func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
 		resp := tg.NewCallback(cbID, "")
 
 		h.bot.Send(resp)
+
 		h.logger.Info(fmt.Sprintf("delivery ID=%d is reserved by runner ID=%d", inp.DeliveryID, runnerID))
+
+		//todo: duplicate delivery text to user's pm
+		//m is initialMessage
+
+		//Apply extra data to delivery text
+		dlvMsg := cb.Message.Text
+		dlvMsg = dlvMsg + bot.AfterReserveReplyText(inp.DeliveryID, reservedAt)
+
+		//TODO: table to save chat's locales to print time
+		msg := tg.NewMessage(usrID, dlvMsg)
+		msg.ReplyMarkup = bot.CompleteDeliveryButton(&inp)
+		h.bot.Send(msg)
 		return
 	case false:
 		fmt.Println(data)

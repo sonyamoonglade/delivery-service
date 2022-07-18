@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
+	"time"
 )
 
 type deliveryStorage struct {
@@ -55,9 +56,10 @@ func (s *deliveryStorage) Create(dto *dto.CreateDeliveryDto) (int64, error) {
 	return deliveryID, nil
 }
 
-func (s *deliveryStorage) Reserve(dto dto.ReserveDeliveryDto) (bool, error) {
+func (s *deliveryStorage) Reserve(dto dto.ReserveDeliveryDto) (time.Time, error) {
 
 	var free bool
+	var reservedAt time.Time
 
 	tx, err := s.db.BeginTxx(context.Background(), &sql.TxOptions{
 		Isolation: sql.LevelDefault,
@@ -65,50 +67,50 @@ func (s *deliveryStorage) Reserve(dto dto.ReserveDeliveryDto) (bool, error) {
 	})
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return false, err
+			return time.Time{}, err
 		}
 
-		return false, err
+		return time.Time{}, err
 	}
 
 	q := fmt.Sprintf("SELECT is_free FROM %s WHERE delivery_id = $1", deliveryTable)
 	row := tx.QueryRowx(q, dto.DeliveryID)
 	if err = row.Scan(&free); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return false, err
+			return time.Time{}, err
 		}
-		return false, err
+		return time.Time{}, err
 	}
 	//Make sure delivery is 100% free to reserve. If not -> rollback
 	if free == false {
 		if err := tx.Rollback(); err != nil {
-			return false, err
+			return time.Time{}, err
 		}
-		return false, nil
+		return time.Time{}, err
 	}
 
 	q1 := fmt.Sprintf("UPDATE %s SET is_free = false WHERE delivery_id = $1", deliveryTable)
 	_, err = tx.Exec(q1, dto.DeliveryID)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
-			return false, err
+			return time.Time{}, err
 		}
-		return false, err
+		return time.Time{}, err
 	}
-	q2 := fmt.Sprintf("INSERT INTO %s (delivery_id, runner_id) VALUES ($1,$2)", reservedTable)
-	_, err = tx.Exec(q2, dto.DeliveryID, dto.RunnerID)
-	if err != nil {
+	q2 := fmt.Sprintf("INSERT INTO %s (delivery_id, runner_id) VALUES ($1,$2) RETURNING reserved_at", reservedTable)
+	row = tx.QueryRowx(q2, dto.DeliveryID, dto.RunnerID)
+	if err = row.Scan(&reservedAt); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return false, err
+			return time.Time{}, err
 		}
-		return false, err
+		return time.Time{}, err
 	}
 
 	if err = tx.Commit(); err != nil {
 		if err := tx.Rollback(); err != nil {
-			return false, err
+			return time.Time{}, err
 		}
-		return false, err
+		return time.Time{}, err
 	}
-	return true, nil
+	return reservedAt, nil
 }
