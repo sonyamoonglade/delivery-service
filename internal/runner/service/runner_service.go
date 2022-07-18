@@ -22,8 +22,16 @@ func NewRunnerService(logger *zap.Logger, storage runner.Storage) runner.Service
 }
 
 func (s *runnerService) GetByTelegramId(tgUsrID int64) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+
+	runnerID, err := s.storage.GetByTelegramId(tgUsrID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, tgErrors.RunnerDoesNotExistClean()
+		}
+		return 0, err
+	}
+	return runnerID, nil
+
 }
 
 func (s *runnerService) IsRunner(usrPhoneNumber string) (int64, error) {

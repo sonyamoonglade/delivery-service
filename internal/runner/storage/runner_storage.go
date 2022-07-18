@@ -22,6 +22,20 @@ const (
 	telegramRunnerTable = "telegram_runner"
 )
 
+func (s *runnerStorage) GetByTelegramId(tgUsrID int64) (int64, error) {
+
+	q := fmt.Sprintf("SELECT runner_id FROM %s WHERE telegram_id = $1", telegramRunnerTable)
+
+	var runnerID int64
+	row := s.db.QueryRowx(q, tgUsrID)
+
+	if err := row.Scan(&runnerID); err != nil {
+		return 0, err
+	}
+	return runnerID, nil
+
+}
+
 func (s *runnerStorage) IsKnownByTelegramId(tgUsrID int64) (bool, error) {
 	q := fmt.Sprintf("SELECT true FROM %s WHERE telegram_id = $1", telegramRunnerTable)
 

@@ -55,6 +55,10 @@ var (
 	BOT_TOKEN = "BOT_TOKEN"
 )
 
+type CallbackData struct {
+	DeliveryID int64 `json:"delivery_id,omitempty"`
+}
+
 const MessageTemplate = "" +
 	"Заказ #orderId\n\r" +
 	"\n\r" +

@@ -16,8 +16,6 @@ const (
 	DeliveryAlreadyExists = "Delivery already exists"
 	DeliveryDoesNotExist  = "Delivery does not exist"
 	RunnerAlreadyExists   = "Runner already exists"
-	RunnerDoesNotExist    = "Runner does not exist"
-	YouAreNotARunner      = "You are not a runner"
 )
 
 type HttpError struct {

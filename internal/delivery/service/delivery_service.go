@@ -33,7 +33,6 @@ func (s *deliveryService) Create(dto *dto.CreateDeliveryDto) (int64, error) {
 }
 
 func (s *deliveryService) Reserve(dto dto.ReserveDeliveryDto) (bool, error) {
-
 	ok, err := s.storage.Reserve(dto)
 	if err != nil {
 		return false, err

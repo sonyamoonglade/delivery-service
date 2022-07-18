@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
@@ -10,7 +11,8 @@ import (
 	"strings"
 )
 
-const ChatId = -784171010
+const chatId int64 = -693829286
+
 const buttonText = "Взять 🚚"
 
 type telegramService struct {
@@ -23,7 +25,7 @@ func NewTelegramService(logger *zap.Logger, bot *tg.BotAPI) telegram.Service {
 }
 
 func (s *telegramService) Send(text string, deliveryID int64) error {
-	msg := tg.NewMessage(ChatId, text)
+	msg := tg.NewMessage(chatId, text)
 	msg.ReplyMarkup = s.genKeyboard(deliveryID)
 
 	_, err := s.bot.Send(msg)
@@ -38,11 +40,16 @@ func (s *telegramService) Send(text string, deliveryID int64) error {
 
 func (s *telegramService) genKeyboard(deliveryID int64) tg.InlineKeyboardMarkup {
 
-	data := fmt.Sprintf("reserve %d", deliveryID)
+	data := tgdelivery.CallbackData{
+		DeliveryID: deliveryID,
+	}
+
+	bytes, _ := json.Marshal(data)
+	strData := string(bytes)
 
 	reserveButton := tg.InlineKeyboardButton{
 		Text:         buttonText,
-		CallbackData: &data,
+		CallbackData: &strData,
 	}
 	row := []tg.InlineKeyboardButton{reserveButton}
 
@@ -105,4 +112,8 @@ func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
 
 func (s *telegramService) StartMessage() string {
 	return "Привет!"
+}
+
+func (s *telegramService) GetGroupChatId() int64 {
+	return chatId
 }
