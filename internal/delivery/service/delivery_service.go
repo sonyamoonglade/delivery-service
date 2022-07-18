@@ -9,11 +9,11 @@ import (
 )
 
 type deliveryService struct {
-	logger  *zap.Logger
+	logger  *zap.SugaredLogger
 	storage delivery.Storage
 }
 
-func NewDeliveryService(logger *zap.Logger, storage delivery.Storage) delivery.Service {
+func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage) delivery.Service {
 	return &deliveryService{logger: logger, storage: storage}
 }
 

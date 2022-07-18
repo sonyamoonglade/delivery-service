@@ -17,10 +17,10 @@ const buttonText = "Взять 🚚"
 
 type telegramService struct {
 	bot    *tg.BotAPI
-	logger *zap.Logger
+	logger *zap.SugaredLogger
 }
 
-func NewTelegramService(logger *zap.Logger, bot *tg.BotAPI) telegram.Service {
+func NewTelegramService(logger *zap.SugaredLogger, bot *tg.BotAPI) telegram.Service {
 	return &telegramService{bot: bot, logger: logger}
 }
 
@@ -34,7 +34,6 @@ func (s *telegramService) Send(text string, deliveryID int64) error {
 		return tgErrors.InternalError
 	}
 
-	s.logger.Debug("Sent telegram message successfully")
 	return nil
 }
 

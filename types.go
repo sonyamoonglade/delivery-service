@@ -45,12 +45,6 @@ var (
 	WithCard Pay = "withCard"
 )
 
-type BotConfig struct {
-	Token   string
-	Timeout int
-	Debug   bool
-}
-
 var (
 	BOT_TOKEN = "BOT_TOKEN"
 )

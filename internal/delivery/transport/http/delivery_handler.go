@@ -14,12 +14,12 @@ import (
 )
 
 type deliveryHandler struct {
-	logger          *zap.Logger
+	logger          *zap.SugaredLogger
 	deliveryService delivery.Service
 	telegramService telegram.Service
 }
 
-func NewDeliveryHandler(logger *zap.Logger, delivery delivery.Service, tg telegram.Service) delivery.Transport {
+func NewDeliveryHandler(logger *zap.SugaredLogger, delivery delivery.Service, tg telegram.Service) delivery.Transport {
 	return &deliveryHandler{logger: logger, deliveryService: delivery, telegramService: tg}
 }
 

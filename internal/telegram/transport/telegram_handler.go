@@ -11,6 +11,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
+	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
@@ -19,14 +20,14 @@ import (
 )
 
 type telegramHandler struct {
-	logger          *zap.Logger
+	logger          *zap.SugaredLogger
 	bot             *tg.BotAPI
 	telegramService telegram.Service
 	runnerService   runner.Service
 	deliveryService delivery.Service
 }
 
-func NewTgHandler(logger *zap.Logger, bot *tg.BotAPI, run runner.Service, del delivery.Service, tgService telegram.Service) telegram.Transport {
+func NewTgHandler(logger *zap.SugaredLogger, bot *tg.BotAPI, run runner.Service, del delivery.Service, tgService telegram.Service) telegram.Transport {
 	return &telegramHandler{logger: logger, bot: bot, runnerService: run, deliveryService: del, telegramService: tgService}
 }
 
@@ -38,12 +39,20 @@ func (h *telegramHandler) ListenForUpdates(bot *tg.BotAPI, cfg tg.UpdateConfig) 
 }
 
 func (h *telegramHandler) handle(u *tg.Update) {
-	if u.Message != nil {
+	switch {
+	case u.Message != nil && u.Message.Contact != nil:
+		h.handleContact(u.Message)
+		return
+	case u.Message != nil:
 		h.handleMessage(u.Message)
-	}
-	if u.CallbackQuery != nil {
+		return
+	case u.CallbackQuery != nil:
 		h.handleCallback(u.CallbackQuery)
+		return
+	default:
+		return
 	}
+
 }
 
 func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
@@ -54,6 +63,8 @@ func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
 	cbID := cb.ID
 	data := cb.Data
 	response := tg.NewCallback(cbID, "")
+
+	h.logger.Debug(fmt.Sprintf("received a callback data=%s from '%d'", data, usrID))
 
 	switch rcvFromGroup {
 
@@ -100,147 +111,135 @@ func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
 		resp := tg.NewCallback(cbID, "")
 
 		h.bot.Send(resp)
-		h.logger.Info("ok!")
+		h.logger.Info(fmt.Sprintf("delivery ID=%d is reserved by runner ID=%d", inp.DeliveryID, runnerID))
 		return
 	case false:
 		fmt.Println(data)
 		h.bot.Send(response)
 		return
 	}
-	////todo:update message with check mark, send delivery to pm by usrID
+	//todo:update message with check mark, send delivery to pm by usrID
 }
 
-//todo: return err
 func (h *telegramHandler) handleMessage(m *tg.Message) {
-	fmt.Println(m.Text, m.From.FirstName)
+	//todo: parse /start and return command array
+	h.logger.Debug(fmt.Sprintf("received a message '%s' from '%s'", m.Text, m.From.UserName))
+
 	isGrp := m.Chat.IsGroup()
 	chatID := m.Chat.ID
-	telegramUsrID := m.From.ID
-	if !isGrp {
+	usrID := m.From.ID
+	lwrCaseMsg := strings.ToLower(m.Text)
+
+	//For bot's personal messages
+	if isGrp == false {
 		switch {
-		case strings.ToLower(m.Text) == "/work" || strings.ToLower(m.Text) == "войти":
-			usrID := m.From.ID
+		case lwrCaseMsg == "/work" || lwrCaseMsg == "войти":
 			ok, err := h.runnerService.IsKnownByTelegramId(usrID)
 			if err != nil {
 				h.ResponseWithError(err, chatID)
 				return
 			}
+
 			if !ok {
-				msg := tg.NewMessage(chatID, templates.IsNotKnownByTelegram)
-				kb := genKb()
-				kb.ResizeKeyboard = true
-				msg.ReplyMarkup = kb
+				msg := tg.NewMessage(chatID, templates.UsrIsNotKnownByTelegram)
+				msg.ReplyMarkup = bot.GreetingKeyboard()
 				h.bot.Send(msg)
 				return
 			}
-			msg := tg.NewMessage(chatID, templates.IsKnownByTelegram)
+
+			msg := tg.NewMessage(chatID, templates.UsrIsKnownByTelegram)
 			h.bot.Send(msg)
 			return
 		}
-		if m.Contact != nil {
-			usrPhNumber := m.Contact.PhoneNumber
-			username := m.Contact.FirstName
-			phWithPlus := "+" + usrPhNumber
-			runnerID, err := h.runnerService.IsRunner(phWithPlus)
 
-			if err != nil {
-				h.ResponseWithError(err, chatID)
-				return
-			}
-
-			if runnerID == 0 {
-				msg := tg.NewMessage(chatID, templates.UsrIsNotRunner)
-				h.bot.Send(msg)
-				return
-			}
-			err = h.runnerService.BeginWork(dto.RunnerBeginWorkDto{
-				TelegramUserID: telegramUsrID,
-				RunnerID:       runnerID,
-			})
-			if err != nil {
-				h.ResponseWithError(err, chatID)
-				return
-			}
-			msg := tg.NewMessage(chatID, fmt.Sprintf(templates.BeginWorkSuccess, username))
-			h.bot.Send(msg)
-			return
-		}
 		return
 	}
+	//For group chat
 	switch m.Text {
 	case "/work":
-		msg := tg.NewMessage(chatID, "Тебе сюда 😇")
-		kb := genBotLink()
-		msg.ReplyMarkup = kb
-		sent, _ := h.bot.Send(msg)
-		time.Sleep(time.Second * 2)
-		m := tg.NewEditMessageText(chatID, sent.MessageID, "abccd")
-		h.bot.Send(m)
+		msg := tg.NewMessage(chatID, templates.ComeHere)
+		msg.ReplyMarkup = bot.LinkButton()
+		sentMsg, _ := h.bot.Send(msg)
+
+		//Introduce some delay for teapots
+		time.Sleep(time.Second * 3)
+
+		//Clear message to prevent spam in group
+		delMsg := tg.NewDeleteMessage(chatID, sentMsg.MessageID)
+		h.bot.Send(delMsg)
 		return
 	default:
+		//Bot doesn't respond for non '/work' messages in group chat
 		return
 	}
-	//todo: parse /start and return command array
 }
 
-func genKb() tg.ReplyKeyboardMarkup {
-	b := tg.KeyboardButton{
-		Text:           "Дать телефон",
-		RequestContact: true,
-	}
-	b2 := tg.KeyboardButton{
-		Text: "Войти",
-	}
-	row := []tg.KeyboardButton{b, b2}
+func (h *telegramHandler) handleContact(m *tg.Message) {
 
-	return tg.NewReplyKeyboard(row)
-}
-
-func genBotLink() tg.InlineKeyboardMarkup {
-	link := "https://t.me/PrivateDeliveryBot"
-	b := tg.InlineKeyboardButton{
-		Text: "Перейти к боту",
-		URL:  &link,
+	c := m.Contact
+	chatID := m.Chat.ID
+	telegramUsrID := m.From.ID
+	username := c.FirstName
+	usrPhNumber := c.PhoneNumber
+	if strings.Split(usrPhNumber, "")[0] != "+" {
+		usrPhNumber = "+" + usrPhNumber
 	}
-	row := []tg.InlineKeyboardButton{b}
-	return tg.NewInlineKeyboardMarkup(row)
+	h.logger.Debug(fmt.Sprintf("received a contact contact=(%s, %s, %s, %d) ", c.PhoneNumber, c.FirstName, c.LastName, c.UserID))
+
+	runnerID, err := h.runnerService.IsRunner(usrPhNumber)
+	if err != nil {
+		h.ResponseWithError(err, chatID)
+		return
+	}
+
+	if runnerID == 0 {
+		msg := tg.NewMessage(chatID, templates.UsrIsNotRunner)
+		h.bot.Send(msg)
+		return
+	}
+
+	err = h.runnerService.BeginWork(dto.RunnerBeginWorkDto{
+		TelegramUserID: telegramUsrID,
+		RunnerID:       runnerID,
+	})
+	if err != nil {
+		h.ResponseWithError(err, chatID)
+		return
+	}
+
+	msg := tg.NewMessage(chatID, fmt.Sprintf(templates.BeginWorkSuccess, username))
+	h.bot.Send(msg)
+
+	return
 }
 
 func (h *telegramHandler) ResponseWithError(err error, chatID int64) {
 	var e tgErrors.TelegramError
 
 	if errors.As(err, &e) {
+
 		msg := tg.NewMessage(chatID, e.Error())
-		if ok, kb := prepareErrorKb(e); ok == true {
+		if ok, kb := h.PrepareErrorKeyboard(e); ok == true {
 			msg.ReplyMarkup = kb
 		}
+
 		h.bot.Send(msg)
 		h.logger.Info(err.Error())
+
 		return
 	}
 	msg := tg.NewMessage(chatID, templates.InternalServiceError)
-	msg.ReplyMarkup = genInternalErrKb()
+	msg.ReplyMarkup = bot.InternalErrorButton()
 	h.logger.Error(err.Error())
 	h.bot.Send(msg)
 	return
 }
 
-func genInternalErrKb() tg.InlineKeyboardMarkup {
-	//todo: move to env/config
-	personalLink := "https://t.me/monasweet"
-	b := tg.InlineKeyboardButton{
-		Text: "Сообщить о проблеме 🔰",
-		URL:  &personalLink,
-	}
-	row := []tg.InlineKeyboardButton{b}
-	return tg.NewInlineKeyboardMarkup(row)
-}
-
-func prepareErrorKb(err error) (bool, tg.ReplyKeyboardMarkup) {
+func (h *telegramHandler) PrepareErrorKeyboard(err error) (bool, tg.ReplyKeyboardMarkup) {
 	switch {
 	//Sends a message with button to user's pm
 	case strings.Contains(strings.ToLower(err.Error()), "вы не курьер!"):
-		return true, genKb()
+		return true, bot.GreetingKeyboard()
 	default:
 		return false, tg.NewReplyKeyboard()
 	}

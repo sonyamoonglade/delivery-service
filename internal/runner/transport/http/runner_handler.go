@@ -12,11 +12,11 @@ import (
 )
 
 type runnerHandler struct {
-	logger        *zap.Logger
+	logger        *zap.SugaredLogger
 	runnerService runner.Service
 }
 
-func NewRunnerHandler(logger *zap.Logger, runnerService runner.Service) runner.Transport {
+func NewRunnerHandler(logger *zap.SugaredLogger, runnerService runner.Service) runner.Transport {
 	return &runnerHandler{logger: logger, runnerService: runnerService}
 }
 

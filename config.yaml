@@ -5,3 +5,7 @@ db:
   database: "delivery"
   host: "localhost"
   port: "5433"
+
+telegram:
+  bot_link: "https://t.me/PrivateDeliveryBot"
+  admin_link: "https://t.me/monasweet"

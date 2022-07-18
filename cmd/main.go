@@ -14,6 +14,8 @@ import (
 	runnHttp "github.com/sonyamoonglade/delivery-service/internal/runner/transport/http"
 	tgService "github.com/sonyamoonglade/delivery-service/internal/telegram/service"
 	tgTransport "github.com/sonyamoonglade/delivery-service/internal/telegram/transport"
+	bot "github.com/sonyamoonglade/delivery-service/pkg/bot"
+	"github.com/sonyamoonglade/delivery-service/pkg/logging"
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"go.uber.org/zap"
 	"log"
@@ -21,8 +23,13 @@ import (
 )
 
 func main() {
+	log.Println("booting an application")
 
-	logger, err := zap.NewProduction()
+	logger, err := logging.WithCfg(&logging.Config{
+		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
+		DevMode:  true,
+		Encoding: logging.JSON,
+	})
 
 	if err != nil {
 		log.Println(err.Error())
@@ -49,12 +56,14 @@ func main() {
 	}
 	logger.Info("Database has connected")
 
-	botCfg := &tgdelivery.BotConfig{
-		Token:   os.Getenv(tgdelivery.BOT_TOKEN),
-		Timeout: 60,
-		Debug:   false,
+	botCfg := &bot.Config{
+		Token:        os.Getenv(tgdelivery.BOT_TOKEN),
+		Timeout:      60,
+		Debug:        false,
+		TelegramLink: appCfg.GetString("telegram.bot_link"),
+		AdminLink:    appCfg.GetString("telegram.admin_link"),
 	}
-	bot, updCfg, err := tgdelivery.BotWithConfig(botCfg)
+	botInstance, updCfg, err := bot.WithConfig(botCfg)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Could not initialize bot. %s", err.Error()))
 	}
@@ -66,11 +75,11 @@ func main() {
 
 	//Initialize service
 	deliveryService := dlvService.NewDeliveryService(logger, deliveryStorage)
-	telegramService := tgService.NewTelegramService(logger, bot)
+	telegramService := tgService.NewTelegramService(logger, botInstance)
 	runnerService := runnService.NewRunnerService(logger, runnerStorage)
 
 	//Initialize transport
-	telegramHandler := tgTransport.NewTgHandler(logger, bot, runnerService, deliveryService, telegramService)
+	telegramHandler := tgTransport.NewTgHandler(logger, botInstance, runnerService, deliveryService, telegramService)
 	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, telegramService)
 	runnerHandler := runnHttp.NewRunnerHandler(logger, runnerService)
 
@@ -81,7 +90,7 @@ func main() {
 	runnerHandler.RegisterRoutes(router)
 	logger.Info("API Routes has initialized")
 
-	go telegramHandler.ListenForUpdates(bot, updCfg)
+	go telegramHandler.ListenForUpdates(botInstance, updCfg)
 	logger.Info("Bot is listening to updates")
 
 	server := tgdelivery.NewServerWithConfig(appCfg, router)
