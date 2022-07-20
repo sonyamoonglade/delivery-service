@@ -148,8 +148,8 @@ func PersonalAfterReserveReply(dto PersonalReserveReplyDto) string {
 func GroupAfterReserveReply(dto GroupReserveReplyDto) string {
 	return fmt.Sprintf(templates.GroupAfterReserveText,
 		dto.DeliveryID,
-		dto.ReservedAt.Format("15:04 02.01"),
 		templates.Success,
+		dto.ReservedAt.Format("15:04 02.01"),
 		dto.RunnerUsername,
 		dto.OrderID,
 		dto.Username,

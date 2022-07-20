@@ -105,9 +105,6 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 		}
 		h.logger.Debug("Reserved a delivery %d", inp.DeliveryID)
 
-		editMsg := tg.NewEditMessageText(grpChatID, msgID, templates.Success)
-		h.Send(editMsg)
-
 		h.logger.Infof("delivery ID=%d is reserved by runner ID=%d", inp.DeliveryID, rn.RunnerID)
 
 		//Get initial message text
@@ -137,7 +134,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 			RunnerUsername: rn.Username,
 		}
 		//Sent short and informative message to delivery group
-		editMsg = tg.NewEditMessageText(grpChatID, msgID, bot.GroupAfterReserveReply(groupData))
+		editMsg := tg.NewEditMessageText(grpChatID, msgID, bot.GroupAfterReserveReply(groupData))
 		h.Send(editMsg)
 		h.logger.Debug("Sent group after-reserve reply")
 

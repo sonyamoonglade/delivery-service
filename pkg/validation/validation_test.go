@@ -1,38 +1,18 @@
-package tgdelivery
+package validation
 
 import (
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestSixifyOrderId(test *testing.T) {
-
-	tt := []TestId{
-		{
-			id:       1,
-			expected: "000001",
-		},
-		{
-			id:       2712,
-			expected: "002712",
-		},
-		{
-			id:       111111,
-			expected: "111111",
-		},
-	}
-
-	for _, t := range tt {
-		actual := SixifyOrderId(t.id)
-		expected := t.expected
-		assert.Equal(test, actual, expected)
-	}
-
+type TestName struct {
+	name string
+	ok   bool
 }
 
-type TestId struct {
-	id       int64
-	expected string
+type TestPhone struct {
+	ph string
+	ok bool
 }
 
 func TestValidatePhoneNumber(test *testing.T) {
@@ -46,13 +26,8 @@ func TestValidatePhoneNumber(test *testing.T) {
 
 	for _, t := range tt {
 		actual := ValidatePhoneNumber(t.ph)
-		assert.Equal(test, actual, t.ok)
+		assert.Equal(test, t.ok, actual)
 	}
-}
-
-type TestPhone struct {
-	ph string
-	ok bool
 }
 
 func TestValidateUsername(test *testing.T) {
@@ -74,11 +49,7 @@ func TestValidateUsername(test *testing.T) {
 	for _, t := range tt {
 		actual := ValidateUsername(t.name)
 		test.Logf("exp - %t, got - %t, v - %s", t.ok, actual, t.name)
-		assert.Equal(test, actual, t.ok)
-	}
-}
+		assert.Equal(test, t.ok, actual)
 
-type TestName struct {
-	name string
-	ok   bool
+	}
 }

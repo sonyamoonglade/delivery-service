@@ -8,6 +8,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	"github.com/sonyamoonglade/delivery-service/pkg/callback"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
+	"github.com/sonyamoonglade/delivery-service/pkg/helpers"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
 	"strings"
@@ -55,7 +56,7 @@ func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
 		payTranslate = "Банковская карта"
 	}
 
-	idLikeSix := tgdelivery.SixifyOrderId(p.Order.OrderID)
+	idLikeSix := helpers.SixifyOrderId(p.Order.OrderID)
 
 	usrMarkStr := "Метки пользователя: "
 	var sortedByImportance []tgdelivery.Mark
