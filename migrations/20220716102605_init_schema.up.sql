@@ -21,13 +21,13 @@ CREATE TABLE IF NOT EXISTS "delivery"(
     "order_id" INTEGER NOT NULL,
     "created_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'utc'),
     "is_free" BOOLEAN NOT NULL DEFAULT TRUE,
-    "pay" pay NOT NULL
+    "pay" pay NOT NULL,
+    "is_completed" BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-ALTER TABLE "delivery" ADD CONSTRAINT "order_id_unique"
-    UNIQUE("order_id");
+ALTER TABLE "delivery" ADD CONSTRAINT "order_id_unique" UNIQUE ("order_id");
 
-CREATE INDEX "order_id_idx" ON "delivery" ("order_id");
+CREATE INDEX "order_id_idx" ON "delivery"("order_id");
 
 
 CREATE TABLE IF NOT EXISTS "reserved"(

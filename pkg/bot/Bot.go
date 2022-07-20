@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
+	"github.com/sonyamoonglade/delivery-service/pkg/callback"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"time"
 )
@@ -67,7 +67,7 @@ func GreetingKeyboard() tg.ReplyKeyboardMarkup {
 	return kb
 }
 
-func InternalErrorButton() tg.InlineKeyboardMarkup {
+func InternalErrorKeyboard() tg.InlineKeyboardMarkup {
 	b := tg.InlineKeyboardButton{
 		Text: templates.Report,
 		URL:  &adminLink,
@@ -76,7 +76,7 @@ func InternalErrorButton() tg.InlineKeyboardMarkup {
 	return tg.NewInlineKeyboardMarkup(row)
 }
 
-func CompleteDeliveryButton(data *tgdelivery.CallbackData) tg.InlineKeyboardMarkup {
+func CompleteDeliveryKeyboard(data callback.CompleteData) tg.InlineKeyboardMarkup {
 
 	bytes, _ := json.Marshal(data)
 	dataStr := string(bytes)
@@ -91,4 +91,21 @@ func CompleteDeliveryButton(data *tgdelivery.CallbackData) tg.InlineKeyboardMark
 
 func AfterReserveReplyText(deliveryID int64, reservedAt time.Time) string {
 	return fmt.Sprintf(templates.AfterReserveReply, reservedAt.Format("15:04 02.01"), deliveryID)
+}
+
+func ReserveDeliveryKeyboard(deliveryID int64) tg.InlineKeyboardMarkup {
+	data := callback.ReserveData{
+		DeliveryID: deliveryID,
+	}
+
+	bytes, _ := json.Marshal(data)
+	strData := string(bytes)
+
+	reserveButton := tg.InlineKeyboardButton{
+		Text:         templates.Reserve,
+		CallbackData: &strData,
+	}
+	row := []tg.InlineKeyboardButton{reserveButton}
+
+	return tg.NewInlineKeyboardMarkup(row)
 }

@@ -9,4 +9,5 @@ type Storage interface {
 	Create(d *dto.CreateDeliveryDto) (int64, error)
 	Delete(id int64) (bool, error)
 	Reserve(dto dto.ReserveDeliveryDto) (time.Time, error)
+	Complete(deliveryID int64) error
 }

@@ -1,19 +1,17 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
+	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
 	"strings"
 )
 
 const chatId int64 = -693829286
-
-const buttonText = "Взять 🚚"
 
 type telegramService struct {
 	bot    *tg.BotAPI
@@ -26,7 +24,7 @@ func NewTelegramService(logger *zap.SugaredLogger, bot *tg.BotAPI) telegram.Serv
 
 func (s *telegramService) Send(text string, deliveryID int64) error {
 	msg := tg.NewMessage(chatId, text)
-	msg.ReplyMarkup = s.genKeyboard(deliveryID)
+	msg.ReplyMarkup = bot.ReserveDeliveryKeyboard(deliveryID)
 
 	_, err := s.bot.Send(msg)
 	if err != nil {
@@ -35,25 +33,6 @@ func (s *telegramService) Send(text string, deliveryID int64) error {
 	}
 
 	return nil
-}
-
-func (s *telegramService) genKeyboard(deliveryID int64) tg.InlineKeyboardMarkup {
-
-	data := tgdelivery.CallbackData{
-		DeliveryID: deliveryID,
-	}
-
-	bytes, _ := json.Marshal(data)
-	strData := string(bytes)
-
-	reserveButton := tg.InlineKeyboardButton{
-		Text:         buttonText,
-		CallbackData: &strData,
-	}
-	row := []tg.InlineKeyboardButton{reserveButton}
-
-	return tg.NewInlineKeyboardMarkup(row)
-
 }
 
 func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {

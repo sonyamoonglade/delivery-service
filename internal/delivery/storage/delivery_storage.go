@@ -24,6 +24,20 @@ func NewDeliveryStorage(db *sqlx.DB) delivery.Storage {
 	return &deliveryStorage{db: db}
 }
 
+func (s *deliveryStorage) Complete(deliveryID int64) error {
+
+	q := fmt.Sprintf("UPDATE %s SET is_completed = true WHERE delivery_id = $1 AND is_completed = false RETURNING delivery_id", deliveryTable)
+
+	row := s.db.QueryRowx(q, deliveryID)
+	if err := row.Scan(); err != nil {
+
+		return err
+	}
+
+	return nil
+
+}
+
 func (s *deliveryStorage) Delete(id int64) (bool, error) {
 
 	q := fmt.Sprintf("DELETE FROM %s WHERE delivery_id = $1 RETURNING delivery_id", deliveryTable)

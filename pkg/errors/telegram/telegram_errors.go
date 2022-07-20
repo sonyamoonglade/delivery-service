@@ -35,3 +35,7 @@ func RunnerDoesNotExistClean() TelegramError {
 func DeliveryHasAlreadyReserved(deliveryID int64) TelegramError {
 	return NewTelegramError(fmt.Sprintf(templates.DeliveryHasAlreadyReserved, deliveryID))
 }
+
+func DeliveryCouldNotBeCompleted(deliveryID int64) TelegramError {
+	return NewTelegramError(fmt.Sprintf(templates.DeliveryCouldNotBeCompleted, deliveryID))
+}

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
@@ -16,6 +18,18 @@ type deliveryService struct {
 
 func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage) delivery.Service {
 	return &deliveryService{logger: logger, storage: storage}
+}
+
+func (s *deliveryService) Complete(deliveryID int64) (bool, error) {
+
+	err := s.storage.Complete(deliveryID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, tgErrors.DeliveryCouldNotBeCompleted(deliveryID)
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func (s *deliveryService) Create(dto *dto.CreateDeliveryDto) (int64, error) {

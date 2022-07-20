@@ -35,7 +35,7 @@ func init() {
 }
 
 // BindPayload
-// Validator for http createDelivery dto (Payload)
+// Validator for http createDelivery callback (Payload)
 func BindPayload(r io.Reader) (*tgdelivery.Payload, error) {
 
 	var p tgdelivery.Payload

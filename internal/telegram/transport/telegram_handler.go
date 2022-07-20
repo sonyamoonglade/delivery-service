@@ -1,17 +1,16 @@
 package transport
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	dlvDto "github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/bot"
+	"github.com/sonyamoonglade/delivery-service/pkg/callback"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
@@ -41,13 +40,13 @@ func (h *telegramHandler) ListenForUpdates(bot *tg.BotAPI, cfg tg.UpdateConfig) 
 func (h *telegramHandler) handle(u *tg.Update) {
 	switch {
 	case u.Message != nil && u.Message.Contact != nil:
-		h.handleContact(u.Message)
+		h.HandleContact(u.Message)
 		return
 	case u.Message != nil:
-		h.handleMessage(u.Message)
+		h.HandleMessage(u.Message)
 		return
 	case u.CallbackQuery != nil:
-		h.handleCallback(u.CallbackQuery)
+		h.HandleCallback(u.CallbackQuery)
 		return
 	default:
 		return
@@ -55,26 +54,24 @@ func (h *telegramHandler) handle(u *tg.Update) {
 
 }
 
-func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
+func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 	rcvFromGroup := cb.Message.Chat.IsGroup()
 	grpChatID := h.telegramService.GetGroupChatId()
 	usrID := cb.From.ID
 	msgID := cb.Message.MessageID
-	cbID := cb.ID
+	callbackID := cb.ID
 	data := cb.Data
-	response := tg.NewCallback(cbID, "")
 
 	h.logger.Debug(fmt.Sprintf("received a callback data=%s from '%d'", data, usrID))
 
 	switch rcvFromGroup {
 
 	case true:
-		var inp tgdelivery.CallbackData
+		var inp callback.ReserveData
 
-		err := json.Unmarshal([]byte(data), &inp)
-		if err != nil {
+		if err := callback.Decode(data, &inp); err != nil {
 			h.ResponseWithError(err, grpChatID)
-			h.bot.Send(response)
+			h.AnswerCallback(callbackID)
 			h.logger.Error(err.Error())
 			return
 		}
@@ -82,7 +79,7 @@ func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
 		runnerID, err := h.runnerService.GetByTelegramId(usrID)
 		if err != nil {
 			h.ResponseWithError(err, usrID)
-			h.bot.Send(response)
+			h.AnswerCallback(callbackID)
 			return
 		}
 		rsrvInp := dlvDto.ReserveDeliveryDto{
@@ -92,7 +89,7 @@ func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
 		reservedAt, err := h.deliveryService.Reserve(rsrvInp)
 		if err != nil {
 			h.ResponseWithError(err, usrID)
-			h.bot.Send(response)
+			h.AnswerCallback(callbackID)
 			h.logger.Error(err.Error())
 			return
 		}
@@ -100,36 +97,53 @@ func (h *telegramHandler) handleCallback(cb *tg.CallbackQuery) {
 		editMsg := tg.NewEditMessageText(grpChatID, msgID, templates.Success)
 		editKb := tg.NewEditMessageReplyMarkup(grpChatID, msgID, tg.NewInlineKeyboardMarkup())
 
-		h.bot.Send(editMsg)
-		h.bot.Send(editKb)
+		h.Send(editMsg)
+		h.Send(editKb)
 
-		resp := tg.NewCallback(cbID, "")
-
-		h.bot.Send(resp)
-
+		h.AnswerCallback(callbackID)
 		h.logger.Info(fmt.Sprintf("delivery ID=%d is reserved by runner ID=%d", inp.DeliveryID, runnerID))
 
 		//todo: duplicate delivery text to user's pm
 		//m is initialMessage
 
-		//Apply extra data to delivery text
+		//Apply extra reply text to delivery message
 		dlvMsg := cb.Message.Text
 		dlvMsg = dlvMsg + bot.AfterReserveReplyText(inp.DeliveryID, reservedAt)
 
 		//TODO: table to save chat's locales to print time
 		msg := tg.NewMessage(usrID, dlvMsg)
-		msg.ReplyMarkup = bot.CompleteDeliveryButton(&inp)
-		h.bot.Send(msg)
+		msg.ReplyMarkup = bot.CompleteDeliveryKeyboard(callback.CompleteData{DeliveryID: inp.DeliveryID})
+		h.Send(msg)
 		return
 	case false:
-		fmt.Println(data)
-		h.bot.Send(response)
+
+		var inp callback.CompleteData
+
+		if err := callback.Decode(data, &inp); err != nil {
+			h.ResponseWithError(err, grpChatID)
+			h.AnswerCallback(callbackID)
+			h.logger.Error(err.Error())
+			return
+		}
+
+		ok, err := h.deliveryService.Complete(inp.DeliveryID)
+		if err != nil {
+			h.ResponseWithError(err, grpChatID)
+			h.AnswerCallback(callbackID)
+			h.logger.Error(err.Error())
+		}
+		if ok == false {
+			h.ResponseWithError(err, grpChatID)
+			h.AnswerCallback(callbackID)
+			h.logger.Error(err.Error())
+		}
+		h.AnswerCallback(callbackID)
 		return
 	}
 	//todo:update message with check mark, send delivery to pm by usrID
 }
 
-func (h *telegramHandler) handleMessage(m *tg.Message) {
+func (h *telegramHandler) HandleMessage(m *tg.Message) {
 	//todo: parse /start and return command array
 	h.logger.Debug(fmt.Sprintf("received a message '%s' from '%s'", m.Text, m.From.UserName))
 
@@ -151,12 +165,12 @@ func (h *telegramHandler) handleMessage(m *tg.Message) {
 			if !ok {
 				msg := tg.NewMessage(chatID, templates.UsrIsNotKnownByTelegram)
 				msg.ReplyMarkup = bot.GreetingKeyboard()
-				h.bot.Send(msg)
+				h.Send(msg)
 				return
 			}
 
 			msg := tg.NewMessage(chatID, templates.UsrIsKnownByTelegram)
-			h.bot.Send(msg)
+			h.Send(msg)
 			return
 		}
 
@@ -174,7 +188,7 @@ func (h *telegramHandler) handleMessage(m *tg.Message) {
 
 		//Clear message to prevent spam in group
 		delMsg := tg.NewDeleteMessage(chatID, sentMsg.MessageID)
-		h.bot.Send(delMsg)
+		h.Send(delMsg)
 		return
 	default:
 		//Bot doesn't respond for non '/work' messages in group chat
@@ -182,7 +196,7 @@ func (h *telegramHandler) handleMessage(m *tg.Message) {
 	}
 }
 
-func (h *telegramHandler) handleContact(m *tg.Message) {
+func (h *telegramHandler) HandleContact(m *tg.Message) {
 
 	c := m.Contact
 	chatID := m.Chat.ID
@@ -197,12 +211,14 @@ func (h *telegramHandler) handleContact(m *tg.Message) {
 	runnerID, err := h.runnerService.IsRunner(usrPhNumber)
 	if err != nil {
 		h.ResponseWithError(err, chatID)
+		h.logger.Error(err.Error())
 		return
 	}
 
 	if runnerID == 0 {
 		msg := tg.NewMessage(chatID, templates.UsrIsNotRunner)
-		h.bot.Send(msg)
+		h.logger.Error(err.Error())
+		h.Send(msg)
 		return
 	}
 
@@ -212,11 +228,12 @@ func (h *telegramHandler) handleContact(m *tg.Message) {
 	})
 	if err != nil {
 		h.ResponseWithError(err, chatID)
+		h.logger.Error(err.Error())
 		return
 	}
 
 	msg := tg.NewMessage(chatID, fmt.Sprintf(templates.BeginWorkSuccess, username))
-	h.bot.Send(msg)
+	h.Send(msg)
 
 	return
 }
@@ -231,15 +248,15 @@ func (h *telegramHandler) ResponseWithError(err error, chatID int64) {
 			msg.ReplyMarkup = kb
 		}
 
-		h.bot.Send(msg)
+		h.Send(msg)
 		h.logger.Info(err.Error())
 
 		return
 	}
 	msg := tg.NewMessage(chatID, templates.InternalServiceError)
-	msg.ReplyMarkup = bot.InternalErrorButton()
+	msg.ReplyMarkup = bot.InternalErrorKeyboard()
+	h.Send(msg)
 	h.logger.Error(err.Error())
-	h.bot.Send(msg)
 	return
 }
 
@@ -252,4 +269,18 @@ func (h *telegramHandler) PrepareErrorKeyboard(err error) (bool, tg.ReplyKeyboar
 		return false, tg.NewReplyKeyboard()
 	}
 
+}
+
+func (h *telegramHandler) AnswerCallback(callbackID string) {
+	response := tg.NewCallback(callbackID, "")
+	h.Send(response)
+	return
+}
+
+func (h *telegramHandler) Send(c tg.Chattable) {
+	if sent, err := h.bot.Send(c); err != nil {
+		h.ResponseWithError(err, sent.Chat.ID)
+		h.logger.Error(err.Error())
+		return
+	}
 }
