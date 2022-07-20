@@ -6,7 +6,9 @@ import (
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/bot"
+	"github.com/sonyamoonglade/delivery-service/pkg/callback"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
+	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
 	"strings"
 )
@@ -23,8 +25,12 @@ func NewTelegramService(logger *zap.SugaredLogger, bot *tg.BotAPI) telegram.Serv
 }
 
 func (s *telegramService) Send(text string, deliveryID int64) error {
+	data := callback.Data{
+		DeliveryID: deliveryID,
+	}
 	msg := tg.NewMessage(chatId, text)
-	msg.ReplyMarkup = bot.ReserveDeliveryKeyboard(deliveryID)
+
+	msg.ReplyMarkup = bot.ReserveDeliveryKeyboard(data)
 
 	_, err := s.bot.Send(msg)
 	if err != nil {
@@ -36,7 +42,7 @@ func (s *telegramService) Send(text string, deliveryID int64) error {
 }
 
 func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
-	template := tgdelivery.MessageTemplate
+	template := templates.DeliveryText
 
 	var payTranslate string
 
@@ -88,8 +94,13 @@ func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
 	return template
 }
 
-func (s *telegramService) StartMessage() string {
-	return "Привет!"
+func (s *telegramService) ExtractDataFromText(text string) *bot.DataFromText {
+
+	var data bot.DataFromText
+
+	fmt.Println(text, data)
+	return &data
+
 }
 
 func (s *telegramService) GetGroupChatId() int64 {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/sonyamoonglade/delivery-service/internal/entity"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 )
@@ -22,17 +23,17 @@ const (
 	telegramRunnerTable = "telegram_runner"
 )
 
-func (s *runnerStorage) GetByTelegramId(tgUsrID int64) (int64, error) {
+func (s *runnerStorage) GetByTelegramId(tgUsrID int64) (*entity.Runner, error) {
 
-	q := fmt.Sprintf("SELECT runner_id FROM %s WHERE telegram_id = $1", telegramRunnerTable)
+	q := fmt.Sprintf("SELECT rn.username, rn.runner_id, rn.phone_number FROM %s rn JOIN %s tgrn ON rn.runner_id = tgrn.runner_id WHERE tgrn.telegram_id = $1", runnerTable, telegramRunnerTable)
 
-	var runnerID int64
+	var r entity.Runner
 	row := s.db.QueryRowx(q, tgUsrID)
 
-	if err := row.Scan(&runnerID); err != nil {
-		return 0, err
+	if err := row.StructScan(&r); err != nil {
+		return nil, err
 	}
-	return runnerID, nil
+	return &r, nil
 
 }
 

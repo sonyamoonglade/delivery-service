@@ -48,19 +48,3 @@ var (
 var (
 	BOT_TOKEN = "BOT_TOKEN"
 )
-
-const MessageTemplate = "" +
-	"Заказ #orderId\n\r" +
-	"\n\r" +
-	"Сумма | sum.0 ₽\n\r" +
-	"Способ оплаты | pay\n\r" +
-	"\n\r" +
-	"Заказчик: username\n\r" +
-	"Номер телефона  phoneNumber\n\r" +
-	"marks" +
-	"\n\r" +
-	"Доставка: да\n\r" +
-	"Адрес: ул. address\n\r" +
-	"Подъезд ent | Этаж gr | Квартира fl\n\r" +
-	"\n\r" +
-	"Время доставки: к time"

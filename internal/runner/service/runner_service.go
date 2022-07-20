@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
+	"github.com/sonyamoonglade/delivery-service/internal/entity"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
@@ -21,14 +22,14 @@ func NewRunnerService(logger *zap.SugaredLogger, storage runner.Storage) runner.
 	return &runnerService{logger: logger, storage: storage}
 }
 
-func (s *runnerService) GetByTelegramId(tgUsrID int64) (int64, error) {
+func (s *runnerService) GetByTelegramId(tgUsrID int64) (*entity.Runner, error) {
 
 	runnerID, err := s.storage.GetByTelegramId(tgUsrID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, tgErrors.RunnerDoesNotExistClean()
+			return nil, tgErrors.RunnerDoesNotExistClean()
 		}
-		return 0, err
+		return nil, err
 	}
 	return runnerID, nil
 

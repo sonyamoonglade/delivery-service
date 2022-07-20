@@ -52,9 +52,11 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	h.logger.Debug("created delivery in database")
-
+	//todo: mv template to templates, func to bot pkg
 	telegramMsg := h.telegramService.FromTemplate(&payload)
 	h.logger.Debug("formatted telegram template")
+
+	//Data for telegram button callback query
 
 	err = h.telegramService.Send(telegramMsg, deliveryID)
 	if err != nil {
@@ -62,7 +64,7 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 		code, R := httpErrors.Response(err)
 		responder.JSON(w, code, R)
 		h.logger.Error(err.Error())
-
+		//Delete delivery in database because telegram service could not send a message
 		err = h.deliveryService.Delete(deliveryID)
 		if err != nil {
 			code, R = httpErrors.Response(err)

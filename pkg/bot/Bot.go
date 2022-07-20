@@ -6,6 +6,7 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sonyamoonglade/delivery-service/pkg/callback"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
+	"strings"
 	"time"
 )
 
@@ -18,6 +19,33 @@ type Config struct {
 	Debug        bool
 	TelegramLink string
 	AdminLink    string
+}
+
+type PersonalReserveReplyDto struct {
+	DeliveryID int64
+	ReservedAt time.Time
+}
+
+type GroupReserveReplyDto struct {
+	DeliveryID     int64
+	OrderID        string
+	Username       string
+	TotalCartPrice int64
+	ReservedAt     time.Time
+	RunnerUsername string
+}
+
+type PersonalCompleteReplyDto struct {
+	DeliveryID     int64
+	OrderID        string
+	Username       string
+	TotalCartPrice int64
+}
+
+type DataFromText struct {
+	OrderID        string
+	TotalCartPrice int64
+	Username       string
 }
 
 func WithConfig(v *Config) (*tg.BotAPI, tg.UpdateConfig, error) {
@@ -76,7 +104,7 @@ func InternalErrorKeyboard() tg.InlineKeyboardMarkup {
 	return tg.NewInlineKeyboardMarkup(row)
 }
 
-func CompleteDeliveryKeyboard(data callback.CompleteData) tg.InlineKeyboardMarkup {
+func CompleteDeliveryKeyboard(data callback.Data) tg.InlineKeyboardMarkup {
 
 	bytes, _ := json.Marshal(data)
 	dataStr := string(bytes)
@@ -89,18 +117,11 @@ func CompleteDeliveryKeyboard(data callback.CompleteData) tg.InlineKeyboardMarku
 	return tg.NewInlineKeyboardMarkup(row)
 }
 
-func AfterReserveReplyText(deliveryID int64, reservedAt time.Time) string {
-	return fmt.Sprintf(templates.AfterReserveReply, reservedAt.Format("15:04 02.01"), deliveryID)
-}
-
-func ReserveDeliveryKeyboard(deliveryID int64) tg.InlineKeyboardMarkup {
-	data := callback.ReserveData{
-		DeliveryID: deliveryID,
-	}
+func ReserveDeliveryKeyboard(data callback.Data) tg.InlineKeyboardMarkup {
 
 	bytes, _ := json.Marshal(data)
 	strData := string(bytes)
-
+	fmt.Println(strData)
 	reserveButton := tg.InlineKeyboardButton{
 		Text:         templates.Reserve,
 		CallbackData: &strData,
@@ -108,4 +129,33 @@ func ReserveDeliveryKeyboard(deliveryID int64) tg.InlineKeyboardMarkup {
 	row := []tg.InlineKeyboardButton{reserveButton}
 
 	return tg.NewInlineKeyboardMarkup(row)
+}
+
+func ParseErrorForKeyboard(err error) (bool, tg.ReplyKeyboardMarkup) {
+	switch {
+	//Sends a message with button to user's pm
+	case strings.Contains(strings.ToLower(err.Error()), "вы не курьер!"):
+		return true, GreetingKeyboard()
+	default:
+		return false, tg.NewReplyKeyboard()
+	}
+}
+
+func PersonalAfterReserveReply(dto PersonalReserveReplyDto) string {
+	return fmt.Sprintf(templates.PersonalAfterReserveText, dto.ReservedAt.Format("15:04 02.01"), dto.DeliveryID)
+}
+
+func GroupAfterReserveReply(dto GroupReserveReplyDto) string {
+	return fmt.Sprintf(templates.GroupAfterReserveText,
+		dto.DeliveryID,
+		dto.ReservedAt.Format("15:04 02.01"),
+		templates.Success,
+		dto.RunnerUsername,
+		dto.OrderID,
+		dto.Username,
+		dto.TotalCartPrice)
+}
+
+func AfterCompleteReply(dto PersonalCompleteReplyDto) string {
+	return fmt.Sprintf(templates.DeliveryCompletedText, dto.DeliveryID, templates.Success, dto.OrderID, dto.Username, dto.TotalCartPrice)
 }

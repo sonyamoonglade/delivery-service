@@ -5,11 +5,7 @@ import (
 	"strings"
 )
 
-type ReserveData struct {
-	DeliveryID int64 `json:"delivery_id,omitempty"`
-}
-
-type CompleteData struct {
+type Data struct {
 	DeliveryID int64 `json:"delivery_id,omitempty"`
 }
 

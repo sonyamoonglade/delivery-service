@@ -56,88 +56,136 @@ func (h *telegramHandler) handle(u *tg.Update) {
 }
 
 func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
+
 	rcvFromGroup := cb.Message.Chat.IsGroup()
 	grpChatID := h.telegramService.GetGroupChatId()
+	//usrID can be used as chatID for private messages
 	usrID := cb.From.ID
 	msgID := cb.Message.MessageID
 	callbackID := cb.ID
-	data := cb.Data
+	callbackData := cb.Data
+	inititalMsg := cb.Message.Text
 
-	h.logger.Debug(fmt.Sprintf("received a callback data=%s from '%d'", data, usrID))
+	h.logger.Debugf("received a callback data=%s from '%d'", callbackData, usrID)
+
+	txtData := h.telegramService.ExtractDataFromText(inititalMsg)
+	h.logger.Debugf("Extracted text-data %v", txtData)
 
 	switch rcvFromGroup {
 
 	case true:
-		var inp callback.ReserveData
+		h.logger.Debug("Recieved group callback")
+		var inp callback.Data
 
-		if err := callback.Decode(data, &inp); err != nil {
+		if err := callback.Decode(callbackData, &inp); err != nil {
 			h.ResponseWithError(err, grpChatID)
 			h.AnswerCallback(callbackID)
-			h.logger.Error(err.Error())
 			return
 		}
+		h.logger.Debugf("Recieved data %v", inp)
 
-		runnerID, err := h.runnerService.GetByTelegramId(usrID)
+		rn, err := h.runnerService.GetByTelegramId(usrID)
 		if err != nil {
 			h.ResponseWithError(err, usrID)
 			h.AnswerCallback(callbackID)
 			return
 		}
-		rsrvInp := dlvDto.ReserveDeliveryDto{
-			RunnerID:   runnerID,
+		h.logger.Debugf("Got runner by telegram id %v", rn)
+
+		rsrvDto := dlvDto.ReserveDeliveryDto{
+			RunnerID:   rn.RunnerID,
 			DeliveryID: inp.DeliveryID,
 		}
-		reservedAt, err := h.deliveryService.Reserve(rsrvInp)
+
+		reservedAt, err := h.deliveryService.Reserve(rsrvDto)
 		if err != nil {
 			h.ResponseWithError(err, usrID)
 			h.AnswerCallback(callbackID)
-			h.logger.Error(err.Error())
 			return
 		}
+		h.logger.Debug("Reserved a delivery %d", inp.DeliveryID)
 
 		editMsg := tg.NewEditMessageText(grpChatID, msgID, templates.Success)
-		editKb := tg.NewEditMessageReplyMarkup(grpChatID, msgID, tg.NewInlineKeyboardMarkup())
-
 		h.Send(editMsg)
-		h.Send(editKb)
 
-		h.AnswerCallback(callbackID)
-		h.logger.Info(fmt.Sprintf("delivery ID=%d is reserved by runner ID=%d", inp.DeliveryID, runnerID))
+		h.logger.Infof("delivery ID=%d is reserved by runner ID=%d", inp.DeliveryID, rn.RunnerID)
 
-		//todo: duplicate delivery text to user's pm
-		//m is initialMessage
+		//Get initial message text
 
-		//Apply extra reply text to delivery message
-		dlvMsg := cb.Message.Text
-		dlvMsg = dlvMsg + bot.AfterReserveReplyText(inp.DeliveryID, reservedAt)
+		//Apply extra parameters for runner's comfort
+		personalData := bot.PersonalReserveReplyDto{
+			DeliveryID: inp.DeliveryID,
+			ReservedAt: reservedAt,
+		}
+		personalMsg := inititalMsg + bot.PersonalAfterReserveReply(personalData)
 
 		//TODO: table to save chat's locales to print time
-		msg := tg.NewMessage(usrID, dlvMsg)
-		msg.ReplyMarkup = bot.CompleteDeliveryKeyboard(callback.CompleteData{DeliveryID: inp.DeliveryID})
+		//Send to runner's private messages so he follows the delivery
+		msg := tg.NewMessage(usrID, personalMsg)
+		msg.ReplyMarkup = bot.CompleteDeliveryKeyboard(inp)
 		h.Send(msg)
+		h.logger.Debug("Sent private after-reserve reply")
+		//Extracted data from initial delivery message
+
+		//Prepare new group message (edit initial)
+		groupData := bot.GroupReserveReplyDto{
+			DeliveryID:     inp.DeliveryID,
+			ReservedAt:     reservedAt,
+			OrderID:        txtData.OrderID,
+			Username:       txtData.Username,
+			TotalCartPrice: txtData.TotalCartPrice,
+			RunnerUsername: rn.Username,
+		}
+		//Sent short and informative message to delivery group
+		editMsg = tg.NewEditMessageText(grpChatID, msgID, bot.GroupAfterReserveReply(groupData))
+		h.Send(editMsg)
+		h.logger.Debug("Sent group after-reserve reply")
+
+		h.AnswerCallback(callbackID)
+		h.logger.Debugf("Answered callback %s successfully", callbackID)
 		return
 	case false:
 
-		var inp callback.CompleteData
+		var inp callback.Data
 
-		if err := callback.Decode(data, &inp); err != nil {
+		if err := callback.Decode(callbackData, &inp); err != nil {
 			h.ResponseWithError(err, grpChatID)
 			h.AnswerCallback(callbackID)
-			h.logger.Error(err.Error())
 			return
 		}
-
+		//Complete the delivery
 		ok, err := h.deliveryService.Complete(inp.DeliveryID)
 		if err != nil {
 			h.ResponseWithError(err, grpChatID)
 			h.AnswerCallback(callbackID)
-			h.logger.Error(err.Error())
+			return
 		}
+
+		//Delivery could not be completed
 		if ok == false {
 			h.ResponseWithError(err, grpChatID)
 			h.AnswerCallback(callbackID)
-			h.logger.Error(err.Error())
+			return
 		}
+		//Delivery is completed
+
+		/*
+			1. Replace old text with new template
+			2. Delete markup completely
+			3. Send it
+		*/
+
+		data := bot.PersonalCompleteReplyDto{
+			DeliveryID:     inp.DeliveryID,
+			OrderID:        txtData.OrderID,
+			Username:       txtData.Username,
+			TotalCartPrice: txtData.TotalCartPrice,
+		}
+
+		//Edit after-reserve delivery text for short and informative
+		aftCompleteMsg := tg.NewEditMessageText(usrID, msgID, bot.AfterCompleteReply(data))
+		h.Send(aftCompleteMsg)
+
 		h.AnswerCallback(callbackID)
 		return
 	}
@@ -245,7 +293,7 @@ func (h *telegramHandler) ResponseWithError(err error, chatID int64) {
 	if errors.As(err, &e) {
 
 		msg := tg.NewMessage(chatID, e.Error())
-		if ok, kb := h.PrepareErrorKeyboard(e); ok == true {
+		if ok, kb := bot.ParseErrorForKeyboard(e); ok == true {
 			msg.ReplyMarkup = kb
 		}
 
@@ -259,17 +307,6 @@ func (h *telegramHandler) ResponseWithError(err error, chatID int64) {
 	h.Send(msg)
 	h.logger.Error(err.Error())
 	return
-}
-
-func (h *telegramHandler) PrepareErrorKeyboard(err error) (bool, tg.ReplyKeyboardMarkup) {
-	switch {
-	//Sends a message with button to user's pm
-	case strings.Contains(strings.ToLower(err.Error()), "вы не курьер!"):
-		return true, bot.GreetingKeyboard()
-	default:
-		return false, tg.NewReplyKeyboard()
-	}
-
 }
 
 func (h *telegramHandler) AnswerCallback(callbackID string) {
