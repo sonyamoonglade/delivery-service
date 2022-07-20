@@ -14,6 +14,7 @@ import (
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -278,8 +279,30 @@ func (h *telegramHandler) AnswerCallback(callbackID string) {
 }
 
 func (h *telegramHandler) Send(c tg.Chattable) {
-	if sent, err := h.bot.Send(c); err != nil {
-		h.ResponseWithError(err, sent.Chat.ID)
+
+	inpTyp := reflect.TypeOf(c)
+	delTyp := reflect.TypeOf(tg.DeleteMessageConfig{})
+	msgTyp := reflect.TypeOf(tg.MessageConfig{})
+	callbackTyp := reflect.TypeOf(tg.CallbackConfig{})
+
+	var chatID int64
+
+	switch {
+	case inpTyp == delTyp:
+		chatID = c.(tg.DeleteMessageConfig).ChatID
+	case inpTyp == msgTyp:
+		chatID = c.(tg.MessageConfig).ChatID
+	case inpTyp == callbackTyp:
+		//todo: read from cache
+		chatID = 0
+	default:
+		chatID = 0
+	}
+
+	if _, err := h.bot.Request(c); err != nil {
+		if chatID != 0 {
+			h.ResponseWithError(err, chatID)
+		}
 		h.logger.Error(err.Error())
 		return
 	}
