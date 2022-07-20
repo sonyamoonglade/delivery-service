@@ -43,7 +43,7 @@ type PersonalCompleteReplyDto struct {
 }
 
 type DataFromText struct {
-	OrderID        string
+	OrderID        int64
 	TotalCartPrice int64
 	Username       string
 }

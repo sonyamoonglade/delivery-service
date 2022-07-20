@@ -12,6 +12,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	"github.com/sonyamoonglade/delivery-service/pkg/callback"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
+	"github.com/sonyamoonglade/delivery-service/pkg/helpers"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
 	"reflect"
@@ -128,7 +129,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 		groupData := bot.GroupReserveReplyDto{
 			DeliveryID:     inp.DeliveryID,
 			ReservedAt:     reservedAt,
-			OrderID:        txtData.OrderID,
+			OrderID:        helpers.SixifyOrderId(txtData.OrderID),
 			Username:       txtData.Username,
 			TotalCartPrice: txtData.TotalCartPrice,
 			RunnerUsername: rn.Username,
@@ -150,6 +151,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 			h.AnswerCallback(callbackID)
 			return
 		}
+
 		//Complete the delivery
 		ok, err := h.deliveryService.Complete(inp.DeliveryID)
 		if err != nil {
@@ -157,7 +159,6 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 			h.AnswerCallback(callbackID)
 			return
 		}
-
 		//Delivery could not be completed
 		if ok == false {
 			h.ResponseWithError(err, grpChatID)
@@ -165,25 +166,21 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 			return
 		}
 		//Delivery is completed
-
-		/*
-			1. Replace old text with new template
-			2. Delete markup completely
-			3. Send it
-		*/
+		h.logger.Debugf("Completed delivery %d", inp.DeliveryID)
 
 		data := bot.PersonalCompleteReplyDto{
 			DeliveryID:     inp.DeliveryID,
-			OrderID:        txtData.OrderID,
+			OrderID:        helpers.SixifyOrderId(txtData.OrderID),
 			Username:       txtData.Username,
 			TotalCartPrice: txtData.TotalCartPrice,
 		}
 
-		//Edit after-reserve delivery text for short and informative
+		//Edit after-reserve delivery text for short and informative after-complete message
 		aftCompleteMsg := tg.NewEditMessageText(usrID, msgID, bot.AfterCompleteReply(data))
 		h.Send(aftCompleteMsg)
-
+		h.logger.Debugf("Sent after-complete message to %d", usrID)
 		h.AnswerCallback(callbackID)
+		h.logger.Debugf("Answered callback %s successfully", callbackID)
 		return
 	}
 	//todo:update message with check mark, send delivery to pm by usrID

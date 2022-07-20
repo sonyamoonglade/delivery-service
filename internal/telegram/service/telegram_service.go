@@ -97,10 +97,20 @@ func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
 
 func (s *telegramService) ExtractDataFromText(text string) *bot.DataFromText {
 
-	var data bot.DataFromText
+	//Split text by new line "\n"
+	splByNewLine := strings.Split(text, "\n")
 
-	fmt.Println(text, data)
-	return &data
+	ordLine := splByNewLine[0]
+	totalPriceLine := splByNewLine[2]
+	userLine := splByNewLine[5]
+
+	data := &bot.DataFromText{
+		OrderID:        helpers.ExtractOrderId(ordLine),
+		TotalCartPrice: helpers.ExtractTotalPrice(totalPriceLine),
+		Username:       helpers.ExtractUsername(userLine),
+	}
+
+	return data
 
 }
 
