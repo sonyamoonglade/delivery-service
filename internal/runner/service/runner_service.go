@@ -3,13 +3,12 @@ package service
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/sonyamoonglade/delivery-service/internal/entity"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
-	tgdelivery "github.com/sonyamoonglade/delivery-service/pkg/helpers"
+	"github.com/sonyamoonglade/delivery-service/pkg/validation"
 	"go.uber.org/zap"
 )
 
@@ -65,12 +64,11 @@ func (s *runnerService) IsKnownByTelegramId(tgUsrID int64) (bool, error) {
 func (s *runnerService) Register(dto dto.RegisterRunnerDto) error {
 
 	var valRes bool
-	fmt.Println(tgdelivery.ValidateUsername(dto.Username))
-	if valRes = tgdelivery.ValidateUsername(dto.Username); !valRes {
+	if valRes = validation.ValidateUsername(dto.Username); !valRes {
 
 		return httpErrors.BadRequestError(httpErrors.InvalidUsername)
 	}
-	if valRes = tgdelivery.ValidatePhoneNumber(dto.PhoneNumber); !valRes {
+	if valRes = validation.ValidatePhoneNumber(dto.PhoneNumber); !valRes {
 		return httpErrors.BadRequestError(httpErrors.InvalidPhoneNumber)
 	}
 
