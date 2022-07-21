@@ -2,11 +2,6 @@ package tgdelivery
 
 import "time"
 
-type Payload struct {
-	Order *Order `json:"order" validate:"required"`
-	User  *User  `json:"user" validate:"required"`
-}
-
 type Order struct {
 	OrderID         int64            `json:"order_id,omitempty" validate:"required"`
 	DeliveryDetails *DeliveryDetails `json:"delivery_details" validate:"required"`
@@ -20,6 +15,7 @@ type DeliveryDetails struct {
 	EntranceNumber int64     `json:"entrance_number" validate:"required"`
 	Floor          int64     `json:"floor" validate:"required"`
 	DeliveredAt    time.Time `json:"delivered_at" validate:"required"`
+	Comment        string    `json:"comment,omitempty"`
 }
 
 type User struct {

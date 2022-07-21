@@ -58,7 +58,7 @@ func (s *deliveryStorage) Delete(id int64) (bool, error) {
 	return true, nil
 }
 
-func (s *deliveryStorage) Create(dto *dto.CreateDeliveryDto) (int64, error) {
+func (s *deliveryStorage) Create(dto *dto.CreateDeliveryDatabaseDto) (int64, error) {
 
 	q := fmt.Sprintf("INSERT INTO %s (order_id, pay) VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING delivery_id", deliveryTable)
 	row := s.db.QueryRowx(q, dto.OrderID, dto.Pay)

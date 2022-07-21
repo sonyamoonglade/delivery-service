@@ -23,13 +23,7 @@ func NewRunnerHandler(logger *zap.SugaredLogger, runnerService runner.Service) r
 func (h *runnerHandler) RegisterRoutes(r *httprouter.Router) {
 
 	r.POST("/api/runner/", h.Register)
-	r.GET("/api/runner/isRunner", h.IsRunner)
 	r.DELETE("/api/runner/ban", h.Ban)
-}
-
-func (h *runnerHandler) IsRunner(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (h *runnerHandler) Register(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {

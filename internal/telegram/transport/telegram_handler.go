@@ -179,6 +179,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 		aftCompleteMsg := tg.NewEditMessageText(usrID, msgID, bot.AfterCompleteReply(data))
 		h.Send(aftCompleteMsg)
 		h.logger.Debugf("Sent after-complete message to %d", usrID)
+
 		h.AnswerCallback(callbackID)
 		h.logger.Debugf("Answered callback %s successfully", callbackID)
 		return

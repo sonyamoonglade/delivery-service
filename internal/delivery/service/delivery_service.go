@@ -32,7 +32,7 @@ func (s *deliveryService) Complete(deliveryID int64) (bool, error) {
 	return true, nil
 }
 
-func (s *deliveryService) Create(dto *dto.CreateDeliveryDto) (int64, error) {
+func (s *deliveryService) Create(dto *dto.CreateDeliveryDatabaseDto) (int64, error) {
 
 	deliveryID, err := s.storage.Create(dto)
 

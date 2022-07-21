@@ -2,7 +2,6 @@ package httptransport
 
 import (
 	"github.com/julienschmidt/httprouter"
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
@@ -30,7 +29,7 @@ func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
 }
 
 func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	var payload tgdelivery.Payload
+	var payload dto.CreateDelivery
 
 	err := binder.Bind(req.Body, &payload)
 	if err != nil {
@@ -39,7 +38,7 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 		h.logger.Error(err.Error())
 		return
 	}
-	createDto := &dto.CreateDeliveryDto{
+	createDto := &dto.CreateDeliveryDatabaseDto{
 		OrderID: payload.Order.OrderID,
 		Pay:     payload.Order.Pay,
 	}

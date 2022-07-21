@@ -3,10 +3,7 @@ package binder
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"github.com/fatih/structs"
 	"github.com/go-playground/validator/v10"
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"io"
 	"reflect"
@@ -32,70 +29,6 @@ func init() {
 	once.Do(func() {
 		v = validator.New()
 	})
-}
-
-// BindPayload
-// Validator for http createDelivery callback (Payload)
-func BindPayload(r io.Reader) (*tgdelivery.Payload, error) {
-
-	var p tgdelivery.Payload
-
-	bytes, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = json.Unmarshal(bytes, &p); err != nil {
-		return nil, err
-	}
-
-	if p.Order == nil || p.User == nil {
-		return nil, &BindingError{
-			Err:     bindingError,
-			Message: "order or user fields are missing",
-		}
-	}
-
-	usrStruct := structs.New(p.User)
-	ordStruct := structs.New(p.Order)
-
-	var bindResults []string
-
-	for k, _ := range usrStruct.Map() {
-		if val := usrStruct.Field(k); val.IsZero() {
-			bindResults = append(bindResults, val.Tag("json"))
-		}
-	}
-	for k, _ := range ordStruct.Map() {
-		if val := ordStruct.Field(k); val.IsZero() {
-			bindResults = append(bindResults, val.Tag("json"))
-		}
-	}
-	if len(bindResults) > 0 {
-		msg := ""
-		for i, r := range bindResults {
-			splByComma := strings.Split(r, ",")
-			if len(splByComma) > 1 {
-				r = splByComma[0]
-			}
-			if i != len(bindResults)-1 {
-				msg += fmt.Sprintf("%s, ", strings.ToLower(r))
-			} else {
-				msg += fmt.Sprintf("%s ", strings.ToLower(r))
-			}
-		}
-		if len(bindResults) == 1 {
-			msg += "field is missing in request body"
-		} else {
-			msg += "fields are missing in request body"
-		}
-		return nil, &BindingError{
-			Err:     bindingError,
-			Message: msg,
-		}
-	}
-
-	return &p, nil
 }
 
 type S struct {

@@ -4,7 +4,12 @@ import (
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 )
 
-type CreateDeliveryDto struct {
+type CreateDelivery struct {
+	Order *tgdelivery.Order `json:"order" validate:"required"`
+	User  *tgdelivery.User  `json:"user" validate:"required"`
+}
+
+type CreateDeliveryDatabaseDto struct {
 	OrderID int64          `json:"order_id"`
 	Pay     tgdelivery.Pay `json:"pay"`
 }

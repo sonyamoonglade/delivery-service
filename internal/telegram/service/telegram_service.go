@@ -4,6 +4,7 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
+	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	"github.com/sonyamoonglade/delivery-service/pkg/callback"
@@ -42,7 +43,7 @@ func (s *telegramService) Send(text string, deliveryID int64) error {
 	return nil
 }
 
-func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
+func (s *telegramService) FromTemplate(p *dto.CreateDelivery) string {
 	template := templates.DeliveryText
 
 	var payTranslate string
@@ -91,6 +92,11 @@ func (s *telegramService) FromTemplate(p *tgdelivery.Payload) string {
 	template = strings.Replace(template, "gr", fmt.Sprintf("%d", p.Order.DeliveryDetails.Floor), -1)
 	template = strings.Replace(template, "fl", fmt.Sprintf("%d", p.Order.DeliveryDetails.FlatCall), -1)
 	template = strings.Replace(template, "time", p.Order.DeliveryDetails.DeliveredAt.Format("15:04 02.01"), -1)
+	if p.Order.DeliveryDetails.Comment != "" {
+		template = strings.Replace(template, "comm", p.Order.DeliveryDetails.Comment, -1)
+	} else {
+		template = strings.Replace(template, "Комментарий: comm\n", "", -1)
+	}
 
 	return template
 }
