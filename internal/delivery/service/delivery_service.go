@@ -8,6 +8,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
@@ -18,6 +19,25 @@ type deliveryService struct {
 
 func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage) delivery.Service {
 	return &deliveryService{logger: logger, storage: storage}
+}
+
+func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) (map[string]bool, error) {
+
+	statuses := make(map[string]bool)
+
+	bools, err := s.storage.Status(dto.OrderIDs)
+	if err != nil {
+		return nil, httpErrors.InternalError()
+	}
+
+	for i, status := range bools {
+		//Length of dto.OrderIDs will be always the same as statuses.
+		orderId := dto.OrderIDs[i]
+		idLikeString := strconv.Itoa(int(orderId))
+		statuses[idLikeString] = status
+	}
+
+	return statuses, nil
 }
 
 func (s *deliveryService) Complete(deliveryID int64) (bool, error) {
@@ -34,7 +54,7 @@ func (s *deliveryService) Complete(deliveryID int64) (bool, error) {
 	return true, nil
 }
 
-func (s *deliveryService) Create(dto *dto.CreateDeliveryDatabaseDto) (int64, error) {
+func (s *deliveryService) Create(dto dto.CreateDeliveryDatabaseDto) (int64, error) {
 
 	deliveryID, err := s.storage.Create(dto)
 

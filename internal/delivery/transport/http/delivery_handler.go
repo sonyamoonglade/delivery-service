@@ -25,20 +25,21 @@ func NewDeliveryHandler(logger *zap.SugaredLogger, delivery delivery.Service, tg
 func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
 
 	r.POST("/api/delivery", h.CreateDelivery)
+	r.POST("/api/delivery/status", h.Status)
 
 }
 
 func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	h.logger.Info("call create delivery")
 	var payload dto.CreateDelivery
 
-	err := binder.Bind(req.Body, &payload)
-	if err != nil {
+	if err := binder.Bind(req.Body, &payload); err != nil {
 		code, R := httpErrors.Response(err)
 		responder.JSON(w, code, R)
 		h.logger.Error(err.Error())
 		return
 	}
-	createDto := &dto.CreateDeliveryDatabaseDto{
+	createDto := dto.CreateDeliveryDatabaseDto{
 		OrderID: payload.Order.OrderID,
 		Pay:     payload.Order.Pay,
 	}
@@ -75,5 +76,28 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 	}
 	h.logger.Debug("successfully sent telegram msg")
 	w.WriteHeader(201)
+	return
+}
+
+func (h *deliveryHandler) Status(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	h.logger.Info("call status")
+	var inp dto.StatusOfDeliveryDto
+
+	if err := binder.Bind(r.Body, &inp); err != nil {
+		code, R := httpErrors.Response(err)
+		responder.JSON(w, code, R)
+		h.logger.Error(err.Error())
+		return
+	}
+
+	statuses, err := h.deliveryService.Status(inp)
+	if err != nil {
+		code, R := httpErrors.Response(err)
+		responder.JSON(w, code, R)
+		h.logger.Error(err.Error())
+		return
+	}
+	responder.JSON(w, http.StatusOK, statuses)
+	h.logger.Info("successfully sent statuses")
 	return
 }

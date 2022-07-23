@@ -6,8 +6,9 @@ import (
 )
 
 type Service interface {
-	Create(dto *dto.CreateDeliveryDatabaseDto) (int64, error)
+	Create(dto dto.CreateDeliveryDatabaseDto) (int64, error)
 	Reserve(dto dto.ReserveDeliveryDto) (time.Time, error)
 	Complete(deliveryID int64) (bool, error)
 	Delete(deliveryID int64) error
+	Status(dto dto.StatusOfDeliveryDto) (map[string]bool, error)
 }

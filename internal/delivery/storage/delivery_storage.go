@@ -24,6 +24,29 @@ func NewDeliveryStorage(db *sqlx.DB) delivery.Storage {
 	return &deliveryStorage{db: db}
 }
 
+func (s *deliveryStorage) Status(ids []int64) ([]bool, error) {
+
+	var statuses []bool
+
+	for _, orderId := range ids {
+		var ok bool
+		q := fmt.Sprintf("SELECT true FROM %s WHERE order_id = $1", deliveryTable)
+		row := s.db.QueryRowx(q, orderId)
+		if err := row.Scan(&ok); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				//Append false because delivery does not exist
+				statuses = append(statuses, false)
+				continue
+			}
+			return nil, err
+		}
+		//If delivery on specific orderId does exist -> append true
+		statuses = append(statuses, true)
+	}
+
+	return statuses, nil
+}
+
 func (s *deliveryStorage) Complete(deliveryID int64) error {
 
 	q := fmt.Sprintf("UPDATE %s SET is_completed = true WHERE delivery_id = $1 AND is_completed = false", deliveryTable)
@@ -58,7 +81,7 @@ func (s *deliveryStorage) Delete(id int64) (bool, error) {
 	return true, nil
 }
 
-func (s *deliveryStorage) Create(dto *dto.CreateDeliveryDatabaseDto) (int64, error) {
+func (s *deliveryStorage) Create(dto dto.CreateDeliveryDatabaseDto) (int64, error) {
 
 	q := fmt.Sprintf("INSERT INTO %s (order_id, pay) VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING delivery_id", deliveryTable)
 	row := s.db.QueryRowx(q, dto.OrderID, dto.Pay)

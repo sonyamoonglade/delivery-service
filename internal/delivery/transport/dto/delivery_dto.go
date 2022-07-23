@@ -18,3 +18,7 @@ type ReserveDeliveryDto struct {
 	RunnerID   int64
 	DeliveryID int64
 }
+
+type StatusOfDeliveryDto struct {
+	OrderIDs []int64 `json:"order_ids" validate:"required"`
+}

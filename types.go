@@ -8,7 +8,7 @@ type Order struct {
 	TotalCartPrice  int64            `json:"total_cart_price" validate:"required"`
 	Pay             Pay              `json:"pay" validate:"required"`
 	IsPaid          bool             `json:"is_paid"`
-	IsDeliveredAsap bool             `json:"is_delivered_asap" validate:"required""`
+	IsDeliveredAsap bool             `json:"is_delivered_asap"`
 }
 
 type DeliveryDetails struct {
@@ -32,7 +32,7 @@ type Mark struct {
 	UserID      int64     `json:"user_id" validate:"required"`
 	Content     string    `json:"content" validate:"required"`
 	CreatedAt   time.Time `json:"created_at" validate:"required"`
-	IsImportant bool      `json:"is_important" validate:"required"`
+	IsImportant bool      `json:"is_important"`
 }
 
 type Pay string
@@ -45,4 +45,11 @@ var (
 
 var (
 	BOT_TOKEN = "BOT_TOKEN"
+)
+
+type DeliveryStatus string
+
+var (
+	Created DeliveryStatus = "created"
+	Missing DeliveryStatus = "missing"
 )
