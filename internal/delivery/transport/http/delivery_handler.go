@@ -97,7 +97,9 @@ func (h *deliveryHandler) Status(w http.ResponseWriter, r *http.Request, _ httpr
 		h.logger.Error(err.Error())
 		return
 	}
-	responder.JSON(w, http.StatusOK, statuses)
+	responder.JSON(w, http.StatusOK, responder.R{
+		"result": statuses,
+	})
 	h.logger.Info("successfully sent statuses")
 	return
 }

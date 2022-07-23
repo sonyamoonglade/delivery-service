@@ -47,9 +47,7 @@ var (
 	BOT_TOKEN = "BOT_TOKEN"
 )
 
-type DeliveryStatus string
-
-var (
-	Created DeliveryStatus = "created"
-	Missing DeliveryStatus = "missing"
-)
+type DeliveryStatus struct {
+	OrderID int64 `json:"orderId"`
+	Status  bool  `json:"status"`
+}

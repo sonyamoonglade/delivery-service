@@ -3,12 +3,12 @@ package service
 import (
 	"database/sql"
 	"errors"
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
-	"strconv"
 	"time"
 )
 
@@ -21,20 +21,23 @@ func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage) del
 	return &deliveryService{logger: logger, storage: storage}
 }
 
-func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) (map[string]bool, error) {
+func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.DeliveryStatus, error) {
 
-	statuses := make(map[string]bool)
+	var statuses []tgdelivery.DeliveryStatus
 
 	bools, err := s.storage.Status(dto.OrderIDs)
 	if err != nil {
 		return nil, httpErrors.InternalError()
 	}
 
-	for i, status := range bools {
+	for i, v := range bools {
 		//Length of dto.OrderIDs will be always the same as statuses.
 		orderId := dto.OrderIDs[i]
-		idLikeString := strconv.Itoa(int(orderId))
-		statuses[idLikeString] = status
+		status := tgdelivery.DeliveryStatus{
+			OrderID: orderId,
+			Status:  v,
+		}
+		statuses = append(statuses, status)
 	}
 
 	return statuses, nil
