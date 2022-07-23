@@ -121,7 +121,6 @@ func ReserveDeliveryKeyboard(data callback.Data) tg.InlineKeyboardMarkup {
 
 	bytes, _ := json.Marshal(data)
 	strData := string(bytes)
-	fmt.Println(strData)
 	reserveButton := tg.InlineKeyboardButton{
 		Text:         templates.Reserve,
 		CallbackData: &strData,

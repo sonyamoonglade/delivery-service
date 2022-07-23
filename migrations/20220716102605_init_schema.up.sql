@@ -1,6 +1,6 @@
 
 
-CREATE TYPE "pay" AS ENUM('cash','paid','withCard');
+CREATE TYPE "pay" AS ENUM('cash','withCard','withCardRunner');
 
 
 CREATE TABLE IF NOT EXISTS "runner"(

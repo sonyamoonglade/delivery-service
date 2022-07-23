@@ -10,8 +10,8 @@ import (
 
 const (
 	BadRequest            = "Bad request"
-	InvalidUsername       = "Invalid username"
-	InvalidPhoneNumber    = "Invalid phone_number"
+	InvalidUsername       = "Validation error. Invalid username"
+	InvalidPhoneNumber    = "Validation error. Invalid phone_number"
 	InternalServerError   = "Internal server error"
 	DeliveryAlreadyExists = "Delivery already exists"
 	DeliveryDoesNotExist  = "Delivery does not exist"

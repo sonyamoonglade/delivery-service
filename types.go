@@ -7,6 +7,8 @@ type Order struct {
 	DeliveryDetails *DeliveryDetails `json:"delivery_details" validate:"required"`
 	TotalCartPrice  int64            `json:"total_cart_price" validate:"required"`
 	Pay             Pay              `json:"pay" validate:"required"`
+	IsPaid          bool             `json:"is_paid"`
+	IsDeliveredAsap bool             `json:"is_delivered_asap" validate:"required""`
 }
 
 type DeliveryDetails struct {
@@ -14,7 +16,7 @@ type DeliveryDetails struct {
 	FlatCall       int64     `json:"flat_call" validate:"required"`
 	EntranceNumber int64     `json:"entrance_number" validate:"required"`
 	Floor          int64     `json:"floor" validate:"required"`
-	DeliveredAt    time.Time `json:"delivered_at" validate:"required"`
+	DeliveredAt    time.Time `json:"delivered_at,omitempty"`
 	Comment        string    `json:"comment,omitempty"`
 }
 
@@ -36,9 +38,9 @@ type Mark struct {
 type Pay string
 
 var (
-	Paid     Pay = "paid"
-	Cash     Pay = "cash"
-	WithCard Pay = "withCard"
+	Cash           Pay = "cash"
+	WithCardRunner Pay = "withCardRunner"
+	WithCard       Pay = "withCard"
 )
 
 var (

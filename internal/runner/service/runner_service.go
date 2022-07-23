@@ -39,7 +39,6 @@ func (s *runnerService) IsRunner(usrPhoneNumber string) (int64, error) {
 	runnerID, err := s.storage.IsRunner(usrPhoneNumber)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			//todo: custom tg error
 			return 0, tgErrors.RunnerDoesNotExist(usrPhoneNumber)
 		}
 		return 0, err
@@ -65,7 +64,6 @@ func (s *runnerService) Register(dto dto.RegisterRunnerDto) error {
 
 	var valRes bool
 	if valRes = validation.ValidateUsername(dto.Username); !valRes {
-
 		return httpErrors.BadRequestError(httpErrors.InvalidUsername)
 	}
 	if valRes = validation.ValidatePhoneNumber(dto.PhoneNumber); !valRes {
@@ -74,13 +72,14 @@ func (s *runnerService) Register(dto dto.RegisterRunnerDto) error {
 
 	runnerID, err := s.storage.Register(dto)
 	if err != nil {
+		s.logger.Error(err.Error())
 		return httpErrors.InternalError()
 	}
 
 	if runnerID == 0 {
 		return httpErrors.ConflictError(httpErrors.RunnerAlreadyExists)
 	}
-	s.logger.Debug("registered user")
+	s.logger.Debug("registered runner successfully")
 	return nil
 
 }

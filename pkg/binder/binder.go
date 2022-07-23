@@ -41,11 +41,9 @@ func Bind(r io.Reader, out interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	//Scan for original type
 	typ := reflect.TypeOf(out)
 	typDest := reflect.New(typ).Interface()
-
 	if err = json.Unmarshal(bytes, &typDest); err != nil {
 		return httpErrors.BadRequestError(httpErrors.BadRequest)
 	}
