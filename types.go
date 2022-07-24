@@ -35,6 +35,26 @@ type Mark struct {
 	IsImportant bool      `json:"is_important"`
 }
 
+type CartProduct struct {
+	Name     string `json:"name" validate:"required"`
+	Price    int64  `json:"price" validate:"required"`
+	Quantity int    `json:"quantity" validate:"required"`
+}
+
+type OrderForCheck struct {
+	OrderID         int64           `json:"order_id" validate:"required"`
+	DeliveryDetails DeliveryDetails `json:"delivery_details,omitempty"`
+	TotalCartPrice  int64           `json:"total_cart_price" validate:"required"`
+	Pay             Pay             `json:"pay" validate:"required"`
+	Cart            []CartProduct   `json:"cart" validate:"required"`
+	IsDelivered     bool            `json:"is_delivered"`
+}
+
+type UserForCheck struct {
+	Username    string `json:"username" validate:"required"`
+	PhoneNumber string `json:"phone_number" validate:"required"`
+}
+
 type Pay string
 
 var (

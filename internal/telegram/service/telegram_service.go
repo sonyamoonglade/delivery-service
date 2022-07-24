@@ -43,27 +43,11 @@ func (s *telegramService) Send(text string, deliveryID int64) error {
 }
 
 func (s *telegramService) FromTemplate(p *dto.CreateDelivery) string {
+
 	template := templates.DeliveryText
 
-	var payTranslate string
-	var isPaidTranslate string
-
-	switch p.Order.Pay {
-	case tgdelivery.Cash:
-		payTranslate = "Наличными"
-	case tgdelivery.WithCardRunner:
-		payTranslate = "Банковской картой курьеру"
-	case tgdelivery.WithCard:
-		payTranslate = "Банковской картой"
-	}
-
-	switch p.Order.IsPaid {
-	case true:
-		isPaidTranslate = "Оплачен"
-	case false:
-		isPaidTranslate = "Не оплачен"
-	}
-
+	payTranslate := helpers.PayTranslate(p.Order.Pay)
+	isPaidTranslate := helpers.IsPaidTranslate(p.Order.IsPaid)
 	idLikeSix := helpers.SixifyOrderId(p.Order.OrderID)
 
 	usrMarkStr := "Метки пользователя: "
@@ -99,7 +83,7 @@ func (s *telegramService) FromTemplate(p *dto.CreateDelivery) string {
 	template = strings.Replace(template, "gr", fmt.Sprintf("%d", p.Order.DeliveryDetails.Floor), -1)
 	template = strings.Replace(template, "fl", fmt.Sprintf("%d", p.Order.DeliveryDetails.FlatCall), -1)
 	template = strings.Replace(template, "is_paid", isPaidTranslate, -1)
-	s.logger.Info(p.Order.DeliveryDetails)
+	//todo: work on comment
 	if p.Order.DeliveryDetails.Comment != "" {
 		template = strings.Replace(template, "comm", p.Order.DeliveryDetails.Comment, -1)
 	} else {

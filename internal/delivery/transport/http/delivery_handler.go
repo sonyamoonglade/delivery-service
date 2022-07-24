@@ -1,6 +1,8 @@
 package httptransport
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
@@ -26,6 +28,29 @@ func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
 
 	r.POST("/api/delivery", h.CreateDelivery)
 	r.POST("/api/delivery/status", h.Status)
+	r.POST("/api/check", h.Check)
+}
+
+func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	h.logger.Info("call check")
+	hdr := w.Header()
+
+	hdr.Add("Content-Type", "octet/stream")
+	hdr.Add("Connection", "keep-alive")
+
+	var inp dto.CheckDto
+
+	if err := binder.Bind(r.Body, &inp); err != nil {
+		code, R := httpErrors.Response(err)
+		responder.JSON(w, code, R)
+		h.logger.Error(err.Error())
+		return
+	}
+
+	bytes, _ := json.Marshal(inp)
+
+	str := string(bytes)
+	fmt.Println(str)
 
 }
 

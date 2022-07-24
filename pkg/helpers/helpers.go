@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"strconv"
 	"strings"
 )
@@ -62,4 +63,33 @@ func ExtractUsername(text string) string {
 	spl := strings.Split(text, ": ")
 	name := spl[1]
 	return name
+}
+
+func PayTranslate(pay tgdelivery.Pay) string {
+	switch pay {
+	case tgdelivery.Cash:
+		return "Наличными"
+	case tgdelivery.WithCardRunner:
+		return "Банковской картой курьеру"
+	default:
+		return "Банковской картой"
+	}
+}
+
+func IsDeliveredTranslate(isDelivered bool) string {
+	switch isDelivered {
+	case true:
+		return "Да"
+	default:
+		return "Нет"
+	}
+}
+
+func IsPaidTranslate(isPaid bool) string {
+	switch isPaid {
+	case true:
+		return "Оплачен"
+	default:
+		return "Не оплачен"
+	}
 }

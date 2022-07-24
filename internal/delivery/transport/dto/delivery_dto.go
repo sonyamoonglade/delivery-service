@@ -22,3 +22,12 @@ type ReserveDeliveryDto struct {
 type StatusOfDeliveryDto struct {
 	OrderIDs []int64 `json:"order_ids" validate:"required"`
 }
+
+type CheckDto struct {
+	Order tgdelivery.OrderForCheck `json:"order" validate:"required"`
+	User  tgdelivery.UserForCheck  `json:"user" validate:"required"`
+}
+
+type CheckDtoForCli struct {
+	Data CheckDto `json:"data"`
+}

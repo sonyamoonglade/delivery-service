@@ -4,7 +4,7 @@ export
 
 
 run:
-	go run cmd/main.go
+	go run cmd/app/main.go
 
 migrate-up:
 	migrate -database "$(DB_URL)" -path migrations -verbose up
