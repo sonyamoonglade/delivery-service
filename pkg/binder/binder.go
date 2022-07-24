@@ -3,7 +3,6 @@ package binder
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"io"
@@ -46,7 +45,6 @@ func Bind(r io.Reader, out interface{}) error {
 	typ := reflect.TypeOf(out)
 	typDest := reflect.New(typ).Interface()
 	if err = json.Unmarshal(bytes, &typDest); err != nil {
-		fmt.Println(err.Error(), string(bytes))
 		return httpErrors.BadRequestError(httpErrors.BadRequest)
 	}
 	//Local reflect.Value

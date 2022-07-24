@@ -60,8 +60,8 @@ func main() {
 		Token:        os.Getenv(tgdelivery.BOT_TOKEN),
 		Timeout:      60,
 		Debug:        false,
-		TelegramLink: appCfg.GetString("telegram.bot_link"),
-		AdminLink:    appCfg.GetString("telegram.admin_link"),
+		TelegramLink: os.Getenv("BOT_URL"),
+		AdminLink:    os.Getenv("ADMIN_URL"),
 	}
 	botInstance, updCfg, err := bot.WithConfig(botCfg)
 	if err != nil {
