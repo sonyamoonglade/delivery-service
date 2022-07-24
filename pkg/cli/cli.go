@@ -36,14 +36,15 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 	var stdOut buffer.Buffer
 	var stdErr buffer.Buffer
 
-	command := fmt.Sprintf("bin/cli.exe -dto %s", strForCli)
-	c.logger.Debugf("command: %s", command)
+	command := fmt.Sprintf("bin/cli.exe")
+	flags := fmt.Sprintf("-dto %s", strForCli)
+	c.logger.Debugf("command: %s, flags: %s", command, flags)
 
-	cmd := exec.Command(command)
+	cmd := exec.Command(command, flags)
 
 	cmd.Stderr = &stdErr
 	cmd.Stdout = &stdOut
-
+	
 	if err := cmd.Run(); err != nil {
 		//If error occurs -> return
 		c.logger.Errorf("stdErr: %s", stdErr.String())
