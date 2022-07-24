@@ -15,6 +15,7 @@ import (
 	tgService "github.com/sonyamoonglade/delivery-service/internal/telegram/service"
 	tgTransport "github.com/sonyamoonglade/delivery-service/internal/telegram/transport"
 	bot "github.com/sonyamoonglade/delivery-service/pkg/bot"
+	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/logging"
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"go.uber.org/zap"
@@ -69,6 +70,12 @@ func main() {
 	}
 	logger.Info("Bot has initialized")
 
+	cliClient := cli.NewCli(logger)
+
+	if err := cliClient.Ping(); err != nil {
+		logger.Error(err.Error())
+	}
+
 	//Initialize storage
 	runnerStorage := runnStorage.NewRunnerStorage(db)
 	deliveryStorage := dlvStorage.NewDeliveryStorage(db)
@@ -80,7 +87,7 @@ func main() {
 
 	//Initialize transport
 	telegramHandler := tgTransport.NewTgHandler(logger, botInstance, runnerService, deliveryService, telegramService)
-	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, telegramService)
+	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, telegramService, cliClient)
 	runnerHandler := runnHttp.NewRunnerHandler(logger, runnerService)
 
 	//Initialize router

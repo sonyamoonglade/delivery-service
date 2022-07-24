@@ -3,6 +3,12 @@ include .env
 export
 
 
+build-app:
+	go build -o ./bin/app.exe ./cmd/app/main.go
+
+build-cli:
+	go build -o ./bin/cli.exe ./cmd/cli/main.go
+
 run:
 	go run cmd/app/main.go
 

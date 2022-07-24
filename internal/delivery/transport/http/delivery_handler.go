@@ -8,6 +8,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
+	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/responder"
 	"go.uber.org/zap"
@@ -18,10 +19,11 @@ type deliveryHandler struct {
 	logger          *zap.SugaredLogger
 	deliveryService delivery.Service
 	telegramService telegram.Service
+	cli             cli.Cli
 }
 
-func NewDeliveryHandler(logger *zap.SugaredLogger, delivery delivery.Service, tg telegram.Service) delivery.Transport {
-	return &deliveryHandler{logger: logger, deliveryService: delivery, telegramService: tg}
+func NewDeliveryHandler(logger *zap.SugaredLogger, delivery delivery.Service, tg telegram.Service, cli cli.Cli) delivery.Transport {
+	return &deliveryHandler{logger: logger, deliveryService: delivery, telegramService: tg, cli: cli}
 }
 
 func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {

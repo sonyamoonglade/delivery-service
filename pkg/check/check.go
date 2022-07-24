@@ -19,7 +19,6 @@ var ApiKeyHasExpired = errors.New("api key has expired")
 var NoApiKeysLeft = errors.New("no api keys left")
 
 const pathToKeys = "check/keys.txt"
-const templatePath = "check/check_template.docx"
 
 func Format(doc *document.Document, dto dto.CheckDto) {
 	var paragraphs []document.Paragraph
@@ -113,7 +112,6 @@ func Format(doc *document.Document, dto dto.CheckDto) {
 		}
 	}
 }
-
 func OpenTemplate(path string) (*document.Document, error) {
 
 	_, err := os.Stat(path)
@@ -127,7 +125,6 @@ func OpenTemplate(path string) (*document.Document, error) {
 	}
 	return doc, nil
 }
-
 func SetLicense(key string) error {
 
 	if err := license.SetMeteredKey(key); err != nil {
@@ -136,7 +133,6 @@ func SetLicense(key string) error {
 	return nil
 
 }
-
 func GetFirstKey() (string, error) {
 	//Open keys file
 	file, err := os.Open(pathToKeys)
@@ -162,7 +158,6 @@ func GetFirstKey() (string, error) {
 
 	return keys[0], nil
 }
-
 func RestoreKey() error {
 	//Open keys file to read content
 	file, err := os.OpenFile(pathToKeys, os.O_RDONLY, 0740)

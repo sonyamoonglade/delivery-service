@@ -29,10 +29,22 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
+	//Parse and register flags
 	flags := RegisterFlags()
-	//var inp dto.CheckDto
 	flag.Parse()
+
 	logger.Debug("parsed flags")
+
+	//Allow clients to ping cli
+	ping := *flags.ping
+	if ping == true {
+		return
+	}
+
+	if flags.dto == nil {
+		logger.Fatal("no flags have been provided")
+	}
+
 	flagDto := *flags.dto
 
 	var cliDto dto.CheckDtoForCli
@@ -62,9 +74,9 @@ func main() {
 		logger.Fatal(err.Error())
 		return
 	}
-
 	logger.Info("all files are ok")
 
+	//Get first key from keys
 	key, err := check.GetFirstKey()
 	if err != nil {
 		if errors.Is(err, check.NoApiKeysLeft) {
@@ -81,6 +93,7 @@ func main() {
 	}
 	logger.Debug("set a license")
 
+	//Open docx template
 	template, err := check.OpenTemplate(templatePath)
 	if err != nil {
 		//Api key is no longer valid
@@ -106,13 +119,16 @@ func main() {
 	}
 
 	// '{"data":{"order":{"order_id":1,"total_cart_price":1080,"pay":"withCard","cart":[{"name":"Моцарелла","price":499,"quantity":2}],"is_delivered":false},"user":{"username":"Иван Семенов","phone_number":"+79128507000"}}}'
+	//Format template with input from command line
 	check.Format(template, inp)
 	logger.Info("formatted a template")
 
+	//Save formatted template
 	if err := template.SaveToFile("./check/check.docx"); err != nil {
 		logger.Fatal(err.Error())
 		return
 	}
+	defer template.Close()
 
 	logger.Info("successfully saved check.docx")
 	return
@@ -120,11 +136,13 @@ func main() {
 
 func RegisterFlags() Flags {
 	return Flags{
-		dto: flag.String("dto", "", "dto"),
+		ping: flag.Bool("ping", false, "ping"),
+		dto:  flag.String("dto", "", "dto"),
 	}
 
 }
 
 type Flags struct {
-	dto *string
+	dto  *string
+	ping *bool
 }
