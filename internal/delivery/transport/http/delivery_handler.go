@@ -1,8 +1,6 @@
 package httptransport
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
@@ -49,10 +47,16 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 		return
 	}
 
-	bytes, _ := json.Marshal(inp)
+	dtoForCli := dto.CheckDtoForCli{
+		Data: inp,
+	}
 
-	str := string(bytes)
-	fmt.Println(str)
+	err := h.cli.WriteCheck(dtoForCli)
+	if err != nil {
+		//Catch api key has expired
+		h.logger.Error(err.Error())
+		return
+	}
 
 }
 

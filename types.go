@@ -12,10 +12,10 @@ type Order struct {
 }
 
 type DeliveryDetails struct {
-	Address        string    `json:"address" validate:"required"`
-	FlatCall       int64     `json:"flat_call" validate:"required"`
-	EntranceNumber int64     `json:"entrance_number" validate:"required"`
-	Floor          int64     `json:"floor" validate:"required"`
+	Address        string    `json:"address,omitempty"`
+	FlatCall       int64     `json:"flat_call,omitempty"`
+	EntranceNumber int64     `json:"entrance_number,omitempty"`
+	Floor          int64     `json:"floor,omitempty"`
 	DeliveredAt    time.Time `json:"delivered_at,omitempty"`
 	Comment        string    `json:"comment,omitempty"`
 }

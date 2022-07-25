@@ -33,8 +33,6 @@ func main() {
 	flags := RegisterFlags()
 	flag.Parse()
 
-	logger.Debug("parsed flags")
-
 	//Allow clients to ping cli
 	ping := *flags.ping
 	if ping == true {
@@ -48,9 +46,10 @@ func main() {
 	flagDto := *flags.dto
 
 	var cliDto dto.CheckDtoForCli
+	logger.Infof("FROM CLI: received %s", flagDto)
 
 	if err := json.Unmarshal([]byte(flagDto), &cliDto); err != nil {
-		log.Fatal(err.Error())
+		log.Fatal(err.Error(), "json error")
 	}
 	logger.Debug("got cli dto from command line")
 

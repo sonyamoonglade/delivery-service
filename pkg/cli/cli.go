@@ -31,20 +31,19 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 		return err
 	}
 
-	strForCli := fmt.Sprintf("'%s'", string(byt))
+	strForCli := string(byt)
 
 	var stdOut buffer.Buffer
 	var stdErr buffer.Buffer
 
 	command := fmt.Sprintf("bin/cli.exe")
-	flags := fmt.Sprintf("-dto %s", strForCli)
-	c.logger.Debugf("command: %s, flags: %s", command, flags)
 
-	cmd := exec.Command(command, flags)
+	// pass -dto flag with string dto
+	cmd := exec.Command(command, "-dto", fmt.Sprintf(`%s`, strForCli))
 
 	cmd.Stderr = &stdErr
 	cmd.Stdout = &stdOut
-	
+
 	if err := cmd.Run(); err != nil {
 		//If error occurs -> return
 		c.logger.Errorf("stdErr: %s", stdErr.String())
