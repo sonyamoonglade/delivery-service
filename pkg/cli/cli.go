@@ -44,7 +44,6 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 
 	strForCli := string(byt)
 
-	var stdOut buffer.Buffer
 	var stdErr buffer.Buffer
 
 	command := fmt.Sprintf("bin/cli.exe")
@@ -53,7 +52,6 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 	cmd := exec.Command(command, "-dto", fmt.Sprintf(`%s`, strForCli))
 
 	cmd.Stderr = &stdErr
-	cmd.Stdout = &stdOut
 
 	if err := cmd.Run(); err != nil {
 		//If error occurs -> return
@@ -62,13 +60,11 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 			return check.ApiKeyHasExpired
 		}
 		c.logger.Errorf("CLI call error. stderr: %s", errText)
-
 		return err
 	}
 
 	//Command has run successfully
 	c.logger.Info("CLI call has been successful")
-	c.logger.Infof("CLI stdout: %s", stdOut.String())
 
 	return nil
 

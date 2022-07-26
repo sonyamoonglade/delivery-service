@@ -3,6 +3,7 @@ package httptransport
 import (
 	"context"
 	"github.com/julienschmidt/httprouter"
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
@@ -40,6 +41,10 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 	hdr.Add("Connection", "keep-alive")
 
 	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	doneCh := make(chan error)
+
 	var inp dto.CheckDto
 	if err := binder.Bind(r.Body, &inp); err != nil {
 		code, R := httpErrors.Response(err)
@@ -52,42 +57,49 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 		Data: inp,
 	}
 
+	//Imitate timeout
 	go func() {
-		time.Sleep(time.Millisecond * 200)
-		h.logger.Info("cancelling")
+		time.Sleep(tgdelivery.CheckWriteTimeout)
 		cancel()
+	}()
+
+	go func() {
+		err := h.deliveryService.Check(dtoForCli)
+		if err != nil {
+			doneCh <- err
+			return
+		}
+		doneCh <- nil
 	}()
 
 	select {
 	case <-ctx.Done():
-		h.logger.Info("im cancelled")
+		h.logger.Errorf("Failed with timeout. %s", ctx.Err())
 		code, R := httpErrors.Response(ctx.Err())
 		responder.JSON(w, code, R)
 		return
-	default:
-		err := h.deliveryService.Check(ctx, dtoForCli)
+	case err := <-doneCh:
 		if err != nil {
 			code, R := httpErrors.Response(err)
 			h.logger.Error(err.Error())
 			responder.JSON(w, code, R)
 			return
 		}
-	}
+		//If previous operations were ok, set header
+		hdr.Add("Content-Type", "octet/stream")
 
-	//If previous operations were ok, set header
-	hdr.Add("Content-Type", "octet/stream")
+		//Copy check file bytes to ResponseWriter
+		err = check.Copy(w)
+		if err != nil {
+			code, R := httpErrors.Response(err)
+			h.logger.Error(err.Error())
+			responder.JSON(w, code, R)
+			return
+		}
 
-	//Copy check file bytes to ResponseWriter
-	err := check.Copy(w)
-	if err != nil {
-		code, R := httpErrors.Response(err)
-		h.logger.Error(err.Error())
-		responder.JSON(w, code, R)
+		h.logger.Info("copy file to response writer success")
 		return
 	}
-
-	h.logger.Info("copy file to response writer success")
-	return
 
 }
 
