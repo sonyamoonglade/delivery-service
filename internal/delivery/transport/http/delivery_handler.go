@@ -3,7 +3,6 @@ package httptransport
 import (
 	"context"
 	"github.com/julienschmidt/httprouter"
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
@@ -37,21 +36,11 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 
 	h.logger.Info("call check")
 	hdr := w.Header()
-	w.WriteHeader(200)
 
-	hdr.Add("Content-Type", "octet/stream")
 	hdr.Add("Connection", "keep-alive")
 
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-
-	select {
-	case <-time.After(tgdelivery.CheckWriteTimeout):
-		cancel()
-	}
-
+	ctx, cancel := context.WithCancel(r.Context())
 	var inp dto.CheckDto
-
 	if err := binder.Bind(r.Body, &inp); err != nil {
 		code, R := httpErrors.Response(err)
 		responder.JSON(w, code, R)
@@ -63,16 +52,33 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 		Data: inp,
 	}
 
-	err := h.deliveryService.Check(ctx, dtoForCli)
-	if err != nil {
-		code, R := httpErrors.Response(err)
-		h.logger.Error(err.Error())
+	go func() {
+		time.Sleep(time.Millisecond * 200)
+		h.logger.Info("cancelling")
+		cancel()
+	}()
+
+	select {
+	case <-ctx.Done():
+		h.logger.Info("im cancelled")
+		code, R := httpErrors.Response(ctx.Err())
 		responder.JSON(w, code, R)
 		return
+	default:
+		err := h.deliveryService.Check(ctx, dtoForCli)
+		if err != nil {
+			code, R := httpErrors.Response(err)
+			h.logger.Error(err.Error())
+			responder.JSON(w, code, R)
+			return
+		}
 	}
 
+	//If previous operations were ok, set header
+	hdr.Add("Content-Type", "octet/stream")
+
 	//Copy check file bytes to ResponseWriter
-	err = check.Copy(w)
+	err := check.Copy(w)
 	if err != nil {
 		code, R := httpErrors.Response(err)
 		h.logger.Error(err.Error())
@@ -81,9 +87,6 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 	}
 
 	h.logger.Info("copy file to response writer success")
-	responder.JSON(w, 200, responder.R{
-		"message": "ok",
-	})
 	return
 
 }

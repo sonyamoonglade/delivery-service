@@ -28,34 +28,39 @@ func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage, cli
 func (s *deliveryService) Check(ctx context.Context, dto dto.CheckDtoForCli) error {
 
 	//Two Iterations to make sure key has restored and used
-	for i := 0; i < 2; i++ {
-		s.logger.Debugf("attempt #%d to write check", i+1)
-		//Write .docx check file
-		err := s.cli.WriteCheck(ctx, dto)
-		if err != nil {
-			if errors.Is(err, check.ApiKeyHasExpired) {
-				//Refresh key here
-				if err := check.RestoreKey(); err != nil {
-					//Some internal error
-					return err
+
+	select {
+	case <-ctx.Done():
+		return cli.TimeoutError
+	default:
+		for i := 0; i < 2; i++ {
+			s.logger.Debugf("attempt #%d to write check", i+1)
+			//Write .docx check file
+			err := s.cli.WriteCheck(dto)
+			if err != nil {
+				if errors.Is(err, check.ApiKeyHasExpired) {
+					//Refresh key here
+					if err := check.RestoreKey(); err != nil {
+						//Some internal error
+						return err
+					}
+					//Restore is successful
+					s.logger.Debug("restored key successfully")
+					continue
 				}
-				//Restore is successful
-				s.logger.Debug("restored key successfully")
-				continue
-			}
-			if errors.Is(err, cli.TimeoutError) {
-				return cli.TimeoutError
+				if errors.Is(err, cli.TimeoutError) {
+					return cli.TimeoutError
+				}
+
+				//Some internal error
+				return err
 			}
 
-			//Some internal error
-			return err
+			//Break if it wrote check at 1st attempt
+			break
 		}
-
-		//Break if it wrote check at 1st attempt
-		break
+		return nil
 	}
-	return nil
-
 }
 
 func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.DeliveryStatus, error) {
