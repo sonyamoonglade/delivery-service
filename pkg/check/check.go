@@ -19,6 +19,7 @@ var ApiKeyHasExpired = errors.New("api key has expired")
 var NoApiKeysLeft = errors.New("no api keys left")
 
 const pathToKeys = "check/keys.txt"
+const pathToCheck = "check/check.docx"
 
 func Format(doc *document.Document, dto dto.CheckDto) {
 	var paragraphs []document.Paragraph
@@ -121,6 +122,9 @@ func OpenTemplate(path string) (*document.Document, error) {
 
 	doc, err := document.Open(path)
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "credits") {
+			return nil, ApiKeyHasExpired
+		}
 		return nil, err
 	}
 	return doc, nil
@@ -149,9 +153,8 @@ func GetFirstKey() (string, error) {
 
 	//Get content
 	content := string(byt)
-
 	//Split by new-line, get first key
-	keys := strings.Split(content, "\n")
+	keys := strings.Split(content, "\r")
 	if len(keys) == 1 && keys[0] == "" {
 		return "", NoApiKeysLeft
 	}
@@ -160,7 +163,7 @@ func GetFirstKey() (string, error) {
 }
 func RestoreKey() error {
 	//Open keys file to read content
-	file, err := os.OpenFile(pathToKeys, os.O_RDONLY, 0740)
+	file, err := os.Open(pathToKeys)
 	if err != nil {
 		return err
 	}
@@ -184,7 +187,7 @@ func RestoreKey() error {
 	file.Close()
 
 	//Open file again with trunc and write permissions
-	file, err = os.OpenFile("keys.txt", os.O_TRUNC|os.O_WRONLY, 0777)
+	file, err = os.OpenFile(pathToKeys, os.O_TRUNC|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
@@ -202,4 +205,18 @@ func RestoreKey() error {
 
 	defer file.Close()
 	return err
+}
+
+func Copy(dst io.Writer) error {
+	//mutex here
+	file, err := os.Open(pathToCheck)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if _, err = io.Copy(dst, file); err != nil {
+		return err
+	}
+	return nil
 }

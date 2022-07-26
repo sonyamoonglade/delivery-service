@@ -3,3 +3,5 @@ cmd/done.docx
 .env
 docker/*
 /bin
+/check
+cmd/test

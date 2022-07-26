@@ -1,27 +1,29 @@
 package httptransport
 
 import (
+	"context"
 	"github.com/julienschmidt/httprouter"
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
-	"github.com/sonyamoonglade/delivery-service/pkg/cli"
+	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/responder"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 type deliveryHandler struct {
 	logger          *zap.SugaredLogger
 	deliveryService delivery.Service
 	telegramService telegram.Service
-	cli             cli.Cli
 }
 
-func NewDeliveryHandler(logger *zap.SugaredLogger, delivery delivery.Service, tg telegram.Service, cli cli.Cli) delivery.Transport {
-	return &deliveryHandler{logger: logger, deliveryService: delivery, telegramService: tg, cli: cli}
+func NewDeliveryHandler(logger *zap.SugaredLogger, delivery delivery.Service, tg telegram.Service) delivery.Transport {
+	return &deliveryHandler{logger: logger, deliveryService: delivery, telegramService: tg}
 }
 
 func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
@@ -32,11 +34,21 @@ func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
 }
 
 func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
 	h.logger.Info("call check")
 	hdr := w.Header()
+	w.WriteHeader(200)
 
 	hdr.Add("Content-Type", "octet/stream")
 	hdr.Add("Connection", "keep-alive")
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
+	select {
+	case <-time.After(tgdelivery.CheckWriteTimeout):
+		cancel()
+	}
 
 	var inp dto.CheckDto
 
@@ -51,12 +63,28 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 		Data: inp,
 	}
 
-	err := h.cli.WriteCheck(dtoForCli)
+	err := h.deliveryService.Check(ctx, dtoForCli)
 	if err != nil {
-		//Catch api key has expired
+		code, R := httpErrors.Response(err)
 		h.logger.Error(err.Error())
+		responder.JSON(w, code, R)
 		return
 	}
+
+	//Copy check file bytes to ResponseWriter
+	err = check.Copy(w)
+	if err != nil {
+		code, R := httpErrors.Response(err)
+		h.logger.Error(err.Error())
+		responder.JSON(w, code, R)
+		return
+	}
+
+	h.logger.Info("copy file to response writer success")
+	responder.JSON(w, 200, responder.R{
+		"message": "ok",
+	})
+	return
 
 }
 

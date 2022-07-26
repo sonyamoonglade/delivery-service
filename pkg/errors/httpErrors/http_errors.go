@@ -9,13 +9,15 @@ import (
 )
 
 const (
-	BadRequest            = "Bad request"
-	InvalidUsername       = "Validation error. Invalid username"
-	InvalidPhoneNumber    = "Validation error. Invalid phone_number"
-	InternalServerError   = "Internal server error"
-	DeliveryAlreadyExists = "Delivery already exists"
-	DeliveryDoesNotExist  = "Delivery does not exist"
-	RunnerAlreadyExists   = "Runner already exists"
+	BadRequest                = "Bad request"
+	InvalidUsername           = "Validation error. Invalid username"
+	InvalidPhoneNumber        = "Validation error. Invalid phone_number"
+	InternalServerError       = "Internal server error"
+	DeliveryAlreadyExists     = "Delivery already exists"
+	DeliveryDoesNotExist      = "Delivery does not exist"
+	RunnerAlreadyExists       = "Runner already exists"
+	CheckServiceIsUnavailable = "Check service is unavailable"
+	TimeoutLimitExceeded      = "Timeout limit exceeded"
 )
 
 type HttpError struct {
@@ -82,13 +84,17 @@ func InternalTelegramError() HttpError {
 
 func parseError(e error) HttpError {
 
+	msg := strings.ToLower(e.Error())
 	switch {
 
-	case strings.Contains(strings.ToLower(e.Error()), "validation"):
+	case strings.Contains(msg, "validation"):
 		return BadRequestError(e.Error())
-	case strings.Contains(strings.ToLower(e.Error()), "internal telegram"):
+	case strings.Contains(msg, "internal telegram"):
 		return InternalTelegramError()
-
+	case strings.Contains(msg, "keys left"):
+		return NewHttpError(503, CheckServiceIsUnavailable)
+	case strings.Contains(msg, "timeout"):
+		return NewHttpError(408, TimeoutLimitExceeded)
 	default:
 		return InternalError()
 	}

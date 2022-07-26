@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"context"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"time"
@@ -12,4 +13,5 @@ type Service interface {
 	Complete(deliveryID int64) (bool, error)
 	Delete(deliveryID int64) error
 	Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.DeliveryStatus, error)
+	Check(ctx context.Context, dto dto.CheckDtoForCli) error
 }

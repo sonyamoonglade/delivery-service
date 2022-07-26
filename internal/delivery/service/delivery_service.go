@@ -1,11 +1,14 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
+	"github.com/sonyamoonglade/delivery-service/pkg/check"
+	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
@@ -15,10 +18,44 @@ import (
 type deliveryService struct {
 	logger  *zap.SugaredLogger
 	storage delivery.Storage
+	cli     cli.Cli
 }
 
-func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage) delivery.Service {
-	return &deliveryService{logger: logger, storage: storage}
+func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage, cli cli.Cli) delivery.Service {
+	return &deliveryService{logger: logger, storage: storage, cli: cli}
+}
+
+func (s *deliveryService) Check(ctx context.Context, dto dto.CheckDtoForCli) error {
+
+	//Two Iterations to make sure key has restored and used
+	for i := 0; i < 2; i++ {
+		s.logger.Debugf("attempt #%d to write check", i+1)
+		//Write .docx check file
+		err := s.cli.WriteCheck(ctx, dto)
+		if err != nil {
+			if errors.Is(err, check.ApiKeyHasExpired) {
+				//Refresh key here
+				if err := check.RestoreKey(); err != nil {
+					//Some internal error
+					return err
+				}
+				//Restore is successful
+				s.logger.Debug("restored key successfully")
+				continue
+			}
+			if errors.Is(err, cli.TimeoutError) {
+				return cli.TimeoutError
+			}
+
+			//Some internal error
+			return err
+		}
+
+		//Break if it wrote check at 1st attempt
+		break
+	}
+	return nil
+
 }
 
 func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.DeliveryStatus, error) {

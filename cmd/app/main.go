@@ -29,7 +29,7 @@ func main() {
 	logger, err := logging.WithCfg(&logging.Config{
 		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
 		DevMode:  true,
-		Encoding: logging.JSON,
+		Encoding: logging.Console,
 	})
 
 	if err != nil {
@@ -81,13 +81,13 @@ func main() {
 	deliveryStorage := dlvStorage.NewDeliveryStorage(db)
 
 	//Initialize service
-	deliveryService := dlvService.NewDeliveryService(logger, deliveryStorage)
+	deliveryService := dlvService.NewDeliveryService(logger, deliveryStorage, cliClient)
 	telegramService := tgService.NewTelegramService(logger, botInstance)
 	runnerService := runnService.NewRunnerService(logger, runnerStorage)
 
 	//Initialize transport
 	telegramHandler := tgTransport.NewTgHandler(logger, botInstance, runnerService, deliveryService, telegramService)
-	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, telegramService, cliClient)
+	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, telegramService)
 	runnerHandler := runnHttp.NewRunnerHandler(logger, runnerService)
 
 	//Initialize router

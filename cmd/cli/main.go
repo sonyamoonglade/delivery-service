@@ -14,7 +14,6 @@ import (
 
 const keysPath = "check/keys.txt"
 const templatePath = "check/check_template.docx"
-const keyHasRestored = "key has restored"
 
 func main() {
 
@@ -46,13 +45,10 @@ func main() {
 	flagDto := *flags.dto
 
 	var cliDto dto.CheckDtoForCli
-	logger.Infof("FROM CLI: received %s", flagDto)
 
 	if err := json.Unmarshal([]byte(flagDto), &cliDto); err != nil {
 		log.Fatal(err.Error(), "json error")
 	}
-	logger.Debug("got cli dto from command line")
-
 	inp := cliDto.Data
 
 	//Check if keys file exists
@@ -79,13 +75,13 @@ func main() {
 	key, err := check.GetFirstKey()
 	if err != nil {
 		if errors.Is(err, check.NoApiKeysLeft) {
-			logger.Error(err.Error())
+			logger.Fatal(err.Error())
 			return
 		}
-		logger.Fatal(err.Error())
+		logger.Fatalf("caused check.GetFirstKey. %s", err.Error())
 		return
 	}
-	logger.Debugf("obtained key %s", key)
+	logger.Debug("obtained key", key)
 
 	if err := check.SetLicense(key); err != nil {
 		logger.Fatal(err.Error())
@@ -97,19 +93,11 @@ func main() {
 	if err != nil {
 		//Api key is no longer valid
 		if errors.Is(err, check.ApiKeyHasExpired) {
-			//Restore key and exit
-			if err := check.RestoreKey(); err != nil {
-				//Zero api keys has left. Exit
-				if errors.Is(err, check.NoApiKeysLeft) {
-					logger.Fatal(err.Error())
-					return
-				}
-				//Internal error
-				logger.Fatal(err.Error())
-				return
-			}
-			//Successfully restored a key
-			logger.Info(keyHasRestored)
+			logger.Fatal(err.Error())
+			return
+		}
+		if errors.Is(err, check.NoApiKeysLeft) {
+			logger.Fatalf("caused check.OpenTemplate. %s", err.Error())
 			return
 		}
 		//Internal error
@@ -123,7 +111,7 @@ func main() {
 	logger.Info("formatted a template")
 
 	//Save formatted template
-	if err := template.SaveToFile("./check/check.docx"); err != nil {
+	if err := template.SaveToFile("check/check.docx"); err != nil {
 		logger.Fatal(err.Error())
 		return
 	}
