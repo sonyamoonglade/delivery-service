@@ -9,6 +9,7 @@ import (
 	"github.com/unidoc/unioffice/common/license"
 	"github.com/unidoc/unioffice/document"
 	"io"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -102,7 +103,12 @@ func Format(doc *document.Document, dto dto.CheckDto) {
 				pp := dto.Order.Cart
 				for _, p := range pp {
 					r.AddText(" - ")
-					r.AddText(p.Name)
+					name := p.Name
+					words := strings.Split(name, " ")
+					if len(words) > 1 {
+						name = words[0]
+					}
+					r.AddText(name)
 					r.AddTab()
 					r.AddTab()
 					r.AddText(fmt.Sprintf("%d * %d.0₽", p.Quantity, p.Price))
@@ -207,16 +213,21 @@ func RestoreKey() error {
 	return err
 }
 
-func Copy(dst io.Writer) error {
+func Copy(w http.ResponseWriter) error {
 	//mutex here
 	file, err := os.Open(pathToCheck)
+	stat, _ := file.Stat()
+
+	w.Header().Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
+
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	if _, err = io.Copy(dst, file); err != nil {
+	if _, err = io.Copy(w, file); err != nil {
 		return err
 	}
+
 	return nil
 }

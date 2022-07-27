@@ -36,9 +36,11 @@ type Mark struct {
 }
 
 type CartProduct struct {
-	Name     string `json:"name" validate:"required"`
-	Price    int64  `json:"price" validate:"required"`
-	Quantity int    `json:"quantity" validate:"required"`
+	ProductID int64  `json:"id,omitempty"`
+	Name      string `json:"translate" validate:"required"`
+	Price     int64  `json:"price" validate:"required"`
+	Quantity  int    `json:"quantity" validate:"required"`
+	Category  string `json:"category,omitempty"`
 }
 
 type OrderForCheck struct {

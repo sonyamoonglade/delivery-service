@@ -2,6 +2,7 @@ package httptransport
 
 import (
 	"context"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
@@ -9,6 +10,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
 	"github.com/sonyamoonglade/delivery-service/pkg/check"
+	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/responder"
 	"go.uber.org/zap"
@@ -56,6 +58,7 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 	dtoForCli := dto.CheckDtoForCli{
 		Data: inp,
 	}
+	fmt.Println(dtoForCli.Data.User)
 
 	//Imitate timeout
 	go func() {
@@ -75,7 +78,7 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 	select {
 	case <-ctx.Done():
 		h.logger.Errorf("Failed with timeout. %s", ctx.Err())
-		code, R := httpErrors.Response(ctx.Err())
+		code, R := httpErrors.Response(cli.TimeoutError)
 		responder.JSON(w, code, R)
 		return
 	case err := <-doneCh:
