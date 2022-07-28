@@ -17,6 +17,10 @@ const templatePath = "check/check_template.docx"
 
 func main() {
 
+	var cliDto dto.CheckDtoForCli
+
+	checkService := check.NewCheckService()
+
 	log.Println("booting check-formatter app")
 
 	logger, err := logging.WithCfg(&logging.Config{
@@ -34,21 +38,15 @@ func main() {
 
 	//Allow clients to ping cli
 	ping := *flags.ping
+	flagDto := *flags.dto
 	if ping == true {
 		return
 	}
 
-	if flags.dto == nil {
-		logger.Fatal("no flags have been provided")
-	}
-
-	flagDto := *flags.dto
-
-	var cliDto dto.CheckDtoForCli
-
 	if err := json.Unmarshal([]byte(flagDto), &cliDto); err != nil {
 		log.Fatal(err.Error(), "json error")
 	}
+
 	inp := cliDto.Data
 
 	//Check if keys file exists
@@ -72,7 +70,7 @@ func main() {
 	logger.Info("all files are ok")
 
 	//Get first key from keys
-	key, err := check.GetFirstKey()
+	key, err := checkService.GetFirstKey()
 	if err != nil {
 		if errors.Is(err, check.NoApiKeysLeft) {
 			logger.Fatal(err.Error())
@@ -83,13 +81,13 @@ func main() {
 	}
 	logger.Debug("obtained key", key)
 
-	if err := check.SetLicense(key); err != nil {
+	if err := checkService.SetLicense(key); err != nil {
 		logger.Fatal(err.Error())
 	}
 	logger.Debug("set a license")
 
 	//Open docx template
-	template, err := check.OpenTemplate(templatePath)
+	template, err := checkService.OpenTemplate(templatePath)
 	if err != nil {
 		//Api key is no longer valid
 		if errors.Is(err, check.ApiKeyHasExpired) {
@@ -105,9 +103,8 @@ func main() {
 		return
 	}
 
-	// '{"data":{"order":{"order_id":1,"total_cart_price":1080,"pay":"withCard","cart":[{"name":"Моцарелла","price":499,"quantity":2}],"is_delivered":false},"user":{"username":"Иван Семенов","phone_number":"+79128507000"}}}'
 	//Format template with input from command line
-	check.Format(template, inp)
+	checkService.Format(template, inp)
 	logger.Info("formatted a template")
 
 	//Save formatted template

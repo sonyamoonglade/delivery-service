@@ -11,23 +11,28 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
+	"net/http"
 	"time"
 )
 
 type deliveryService struct {
-	logger  *zap.SugaredLogger
-	storage delivery.Storage
-	cli     cli.Cli
+	logger       *zap.SugaredLogger
+	storage      delivery.Storage
+	cli          cli.Cli
+	checkService check.Service
 }
 
-func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage, cli cli.Cli) delivery.Service {
-	return &deliveryService{logger: logger, storage: storage, cli: cli}
+func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage, cli cli.Cli, check check.Service) delivery.Service {
+	return &deliveryService{logger: logger, storage: storage, cli: cli, checkService: check}
 }
 
-func (s *deliveryService) Check(dto dto.CheckDtoForCli) error {
+func (s *deliveryService) ReadFromCheck(w http.ResponseWriter) error {
+	return s.checkService.Copy(w)
+}
+
+func (s *deliveryService) WriteCheck(dto dto.CheckDtoForCli) error {
 
 	//Two Iterations to make sure key has restored and used
-
 	for i := 0; i < 2; i++ {
 		s.logger.Debugf("attempt #%d to write check", i+1)
 		//Write .docx check file
@@ -35,7 +40,7 @@ func (s *deliveryService) Check(dto dto.CheckDtoForCli) error {
 		if err != nil {
 			if errors.Is(err, check.ApiKeyHasExpired) {
 				//Refresh key here
-				if err := check.RestoreKey(); err != nil {
+				if err := s.checkService.RestoreKey(); err != nil {
 					//Some internal error
 
 					return cli.TimeoutError
@@ -50,7 +55,7 @@ func (s *deliveryService) Check(dto dto.CheckDtoForCli) error {
 			}
 
 			//Some internal error
-			return cli.TimeoutError
+			return err
 		}
 
 		//Break if it wrote check at 1st attempt
@@ -101,7 +106,6 @@ func (s *deliveryService) Create(dto dto.CreateDeliveryDatabaseDto) (int64, erro
 	deliveryID, err := s.storage.Create(dto)
 
 	// Delivery already exists
-
 	if err != nil {
 		s.logger.Error(err.Error())
 		return 0, httpErrors.InternalError()

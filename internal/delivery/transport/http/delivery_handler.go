@@ -2,14 +2,12 @@ package httptransport
 
 import (
 	"context"
-	"fmt"
 	"github.com/julienschmidt/httprouter"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
-	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/responder"
@@ -58,7 +56,6 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 	dtoForCli := dto.CheckDtoForCli{
 		Data: inp,
 	}
-	fmt.Println(dtoForCli.Data.User)
 
 	//Imitate timeout
 	go func() {
@@ -67,7 +64,7 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 	}()
 
 	go func() {
-		err := h.deliveryService.Check(dtoForCli)
+		err := h.deliveryService.WriteCheck(dtoForCli)
 		if err != nil {
 			doneCh <- err
 			return
@@ -92,7 +89,7 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 		hdr.Add("Content-Type", "octet/stream")
 
 		//Copy check file bytes to ResponseWriter
-		err = check.Copy(w)
+		err = h.deliveryService.ReadFromCheck(w)
 		if err != nil {
 			code, R := httpErrors.Response(err)
 			h.logger.Error(err.Error())

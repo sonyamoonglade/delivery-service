@@ -91,7 +91,7 @@ func parseError(e error) HttpError {
 		return BadRequestError(e.Error())
 	case strings.Contains(msg, "internal telegram"):
 		return InternalTelegramError()
-	case strings.Contains(msg, "keys left"):
+	case strings.Contains(msg, "cli"):
 		return NewHttpError(503, CheckServiceIsUnavailable)
 	case strings.Contains(msg, "timeout"):
 		return NewHttpError(408, TimeoutLimitExceeded)

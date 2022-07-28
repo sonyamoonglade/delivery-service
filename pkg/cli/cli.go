@@ -14,6 +14,7 @@ import (
 )
 
 var TimeoutError = errors.New("operation takes too long")
+var CliError = errors.New("internal cli error")
 
 type Cli interface {
 	WriteCheck(dto dto.CheckDtoForCli) error
@@ -60,7 +61,7 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 			return check.ApiKeyHasExpired
 		}
 		c.logger.Errorf("CLI call error. stderr: %s", errText)
-		return err
+		return CliError
 	}
 
 	//Command has run successfully

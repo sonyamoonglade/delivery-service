@@ -15,6 +15,7 @@ import (
 	tgService "github.com/sonyamoonglade/delivery-service/internal/telegram/service"
 	tgTransport "github.com/sonyamoonglade/delivery-service/internal/telegram/transport"
 	bot "github.com/sonyamoonglade/delivery-service/pkg/bot"
+	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/logging"
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
@@ -81,7 +82,8 @@ func main() {
 	deliveryStorage := dlvStorage.NewDeliveryStorage(db)
 
 	//Initialize service
-	deliveryService := dlvService.NewDeliveryService(logger, deliveryStorage, cliClient)
+	checkService := check.NewCheckService()
+	deliveryService := dlvService.NewDeliveryService(logger, deliveryStorage, cliClient, checkService)
 	telegramService := tgService.NewTelegramService(logger, botInstance)
 	runnerService := runnService.NewRunnerService(logger, runnerStorage)
 

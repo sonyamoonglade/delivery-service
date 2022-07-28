@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 var FileDoesNotExist = errors.New("file does not exist")
@@ -22,7 +23,26 @@ var NoApiKeysLeft = errors.New("no api keys left")
 const pathToKeys = "check/keys.txt"
 const pathToCheck = "check/check.docx"
 
-func Format(doc *document.Document, dto dto.CheckDto) {
+type Service interface {
+	Format(doc *document.Document, dto dto.CheckDto)
+	OpenTemplate(path string) (*document.Document, error)
+	SetLicense(key string) error
+	GetFirstKey() (string, error)
+	RestoreKey() error
+	Copy(w http.ResponseWriter) error
+}
+
+type checkService struct {
+	mut sync.Mutex
+}
+
+func NewCheckService() Service {
+	return &checkService{mut: sync.Mutex{}}
+}
+
+func (c *checkService) Format(doc *document.Document, dto dto.CheckDto) {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	var paragraphs []document.Paragraph
 	for _, p := range doc.Paragraphs() {
 		paragraphs = append(paragraphs, p)
@@ -119,7 +139,9 @@ func Format(doc *document.Document, dto dto.CheckDto) {
 		}
 	}
 }
-func OpenTemplate(path string) (*document.Document, error) {
+func (c *checkService) OpenTemplate(path string) (*document.Document, error) {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 
 	_, err := os.Stat(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -135,15 +157,18 @@ func OpenTemplate(path string) (*document.Document, error) {
 	}
 	return doc, nil
 }
-func SetLicense(key string) error {
-
+func (c *checkService) SetLicense(key string) error {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	if err := license.SetMeteredKey(key); err != nil {
 		return err
 	}
 	return nil
 
 }
-func GetFirstKey() (string, error) {
+func (c *checkService) GetFirstKey() (string, error) {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	//Open keys file
 	file, err := os.Open(pathToKeys)
 	defer file.Close()
@@ -167,7 +192,9 @@ func GetFirstKey() (string, error) {
 
 	return keys[0], nil
 }
-func RestoreKey() error {
+func (c *checkService) RestoreKey() error {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	//Open keys file to read content
 	file, err := os.Open(pathToKeys)
 	if err != nil {
@@ -213,8 +240,9 @@ func RestoreKey() error {
 	return err
 }
 
-func Copy(w http.ResponseWriter) error {
-	//mutex here
+func (c *checkService) Copy(w http.ResponseWriter) error {
+	c.mut.Lock()
+	defer c.mut.Unlock()
 	file, err := os.Open(pathToCheck)
 	stat, _ := file.Stat()
 
