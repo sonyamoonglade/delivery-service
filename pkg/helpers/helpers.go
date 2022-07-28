@@ -67,12 +67,10 @@ func ExtractUsername(text string) string {
 
 func PayTranslate(pay tgdelivery.Pay) string {
 	switch pay {
-	case tgdelivery.Cash:
-		return "Наличными"
-	case tgdelivery.WithCardRunner:
-		return "Банковской картой курьеру"
+	case tgdelivery.OnPickup:
+		return "При получении"
 	default:
-		return "Банковской картой"
+		return "Онлайн банковской картой"
 	}
 }
 

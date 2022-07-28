@@ -60,9 +60,8 @@ type UserForCheck struct {
 type Pay string
 
 var (
-	Cash           Pay = "cash"
-	WithCardRunner Pay = "withCardRunner"
-	WithCard       Pay = "withCard"
+	Online   Pay = "online"
+	OnPickup Pay = "onPickup"
 )
 
 var (
