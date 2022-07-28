@@ -42,7 +42,7 @@ func (s *telegramService) Send(text string, deliveryID int64) error {
 	return nil
 }
 
-func (s *telegramService) FromTemplate(p *dto.CreateDelivery) string {
+func (s *telegramService) FormatTemplate(p *dto.CreateDelivery) string {
 
 	template := templates.DeliveryText
 

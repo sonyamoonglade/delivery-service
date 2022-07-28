@@ -127,7 +127,7 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 	}
 	h.logger.Debug("created delivery in database")
 	//todo: mv template to templates, func to bot pkg
-	telegramMsg := h.telegramService.FromTemplate(&payload)
+	telegramMsg := h.telegramService.FormatTemplate(&payload)
 	h.logger.Debug("formatted telegram template")
 
 	//Data for telegram button callback query
