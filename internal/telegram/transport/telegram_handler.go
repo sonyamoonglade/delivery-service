@@ -40,6 +40,7 @@ func (h *telegramHandler) ListenForUpdates(bot *tg.BotAPI, cfg tg.UpdateConfig) 
 }
 
 func (h *telegramHandler) handle(u *tg.Update) {
+
 	switch {
 	case u.Message != nil && u.Message.Contact != nil:
 		h.HandleContact(u.Message)
@@ -59,7 +60,7 @@ func (h *telegramHandler) handle(u *tg.Update) {
 func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 
 	rcvFromGroup := cb.Message.Chat.IsGroup()
-	grpChatID := h.telegramService.GetGroupChatId()
+	grpChatID := bot.GetGroupChatId()
 	//usrID can be used as chatID for private messages
 	usrID := cb.From.ID
 	msgID := cb.Message.MessageID
@@ -189,7 +190,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 
 func (h *telegramHandler) HandleMessage(m *tg.Message) {
 	//todo: parse /start and return command array
-	h.logger.Debug(fmt.Sprintf("received a message '%s' from '%s'", m.Text, m.From.UserName))
+	h.logger.Debugf("received a message '%s' from '%s' chat '%d'", m.Text, m.From.UserName, m.Chat.ID)
 
 	isGrp := m.Chat.IsGroup()
 	chatID := m.Chat.ID

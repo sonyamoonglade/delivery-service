@@ -15,8 +15,6 @@ import (
 	"strings"
 )
 
-const chatId int64 = -693829286
-
 type telegramService struct {
 	bot    *tg.BotAPI
 	logger *zap.SugaredLogger
@@ -30,7 +28,7 @@ func (s *telegramService) Send(text string, deliveryID int64) error {
 	data := callback.Data{
 		DeliveryID: deliveryID,
 	}
-	msg := tg.NewMessage(chatId, text)
+	msg := tg.NewMessage(bot.GetGroupChatId(), text)
 
 	msg.ReplyMarkup = bot.ReserveDeliveryKeyboard(data)
 
@@ -115,8 +113,4 @@ func (s *telegramService) ExtractDataFromText(text string) *bot.DataFromText {
 
 	return data
 
-}
-
-func (s *telegramService) GetGroupChatId() int64 {
-	return chatId
 }

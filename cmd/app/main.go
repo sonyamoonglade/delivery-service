@@ -22,6 +22,7 @@ import (
 	"go.uber.org/zap"
 	"log"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -58,12 +59,18 @@ func main() {
 	}
 	logger.Info("Database has connected")
 
+	grpChatID, err := strconv.ParseInt(os.Getenv("GROUP_CHAT_ID"), 10, 64)
+	if err != nil {
+		logger.Errorf("could not get group chat id. %s", err.Error())
+	}
+
 	botCfg := &bot.Config{
 		Token:        os.Getenv(tgdelivery.BOT_TOKEN),
 		Timeout:      60,
 		Debug:        false,
 		TelegramLink: os.Getenv("BOT_URL"),
 		AdminLink:    os.Getenv("ADMIN_URL"),
+		GroupChatID:  grpChatID,
 	}
 	botInstance, updCfg, err := bot.WithConfig(botCfg)
 	if err != nil {

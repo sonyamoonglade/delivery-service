@@ -12,6 +12,7 @@ import (
 
 var botLink string
 var adminLink string
+var grpChatID int64
 
 type Config struct {
 	Token        string
@@ -19,6 +20,7 @@ type Config struct {
 	Debug        bool
 	TelegramLink string
 	AdminLink    string
+	GroupChatID  int64
 }
 
 type PersonalReserveReplyDto struct {
@@ -65,6 +67,8 @@ func WithConfig(v *Config) (*tg.BotAPI, tg.UpdateConfig, error) {
 
 	//Set admin link to have tech-support
 	adminLink = v.AdminLink
+
+	grpChatID = v.GroupChatID
 
 	return bot, u, nil
 }
@@ -157,4 +161,8 @@ func GroupAfterReserveReply(dto GroupReserveReplyDto) string {
 
 func AfterCompleteReply(dto PersonalCompleteReplyDto) string {
 	return fmt.Sprintf(templates.DeliveryCompletedText, dto.DeliveryID, templates.Success, dto.OrderID, dto.Username, dto.TotalCartPrice)
+}
+
+func GetGroupChatId() int64 {
+	return grpChatID
 }
