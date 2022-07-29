@@ -81,13 +81,15 @@ func (s *telegramService) FormatTemplate(p *dto.CreateDelivery) string {
 	template = strings.Replace(template, "gr", fmt.Sprintf("%d", p.Order.DeliveryDetails.Floor), -1)
 	template = strings.Replace(template, "fl", fmt.Sprintf("%d", p.Order.DeliveryDetails.FlatCall), -1)
 	template = strings.Replace(template, "is_paid", isPaidTranslate, -1)
-	//todo: work on comment
+
+	//Comment
 	if p.Order.DeliveryDetails.Comment != "" {
 		template = strings.Replace(template, "comm", p.Order.DeliveryDetails.Comment, -1)
 	} else {
 		template = strings.Replace(template, "Комментарий: comm\n", "", -1)
 	}
 
+	//Delivered at
 	if p.Order.IsDeliveredAsap == true {
 		template = strings.Replace(template, "к time", templates.ASAP, -1)
 	} else {

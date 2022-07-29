@@ -154,7 +154,7 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 }
 
 func (h *deliveryHandler) Status(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	h.logger.Info("call status")
+	h.logger.Info("request for statuses")
 	var inp dto.StatusOfDeliveryDto
 
 	if err := binder.Bind(r.Body, &inp); err != nil {
@@ -174,6 +174,6 @@ func (h *deliveryHandler) Status(w http.ResponseWriter, r *http.Request, _ httpr
 	responder.JSON(w, http.StatusOK, responder.R{
 		"result": statuses,
 	})
-	h.logger.Info("successfully sent statuses")
+	h.logger.Info("sent")
 	return
 }

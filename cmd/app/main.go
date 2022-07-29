@@ -31,7 +31,7 @@ func main() {
 	logger, err := logging.WithCfg(&logging.Config{
 		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
 		DevMode:  true,
-		Encoding: logging.Console,
+		Encoding: logging.JSON,
 	})
 
 	if err != nil {

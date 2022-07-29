@@ -46,6 +46,8 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 	strForCli := string(byt)
 
 	var stdErr buffer.Buffer
+	//Optional
+	//var stdOut buffer.Buffer
 
 	command := fmt.Sprintf("bin/cli.exe")
 
@@ -53,6 +55,8 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 	cmd := exec.Command(command, "-dto", fmt.Sprintf(`%s`, strForCli))
 
 	cmd.Stderr = &stdErr
+	//Optional
+	//cmd.Stdout = &stdOut
 
 	if err := cmd.Run(); err != nil {
 		//If error occurs -> return
@@ -63,6 +67,8 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 		c.logger.Errorf("CLI call error. stderr: %s", errText)
 		return CliError
 	}
+	//Optional stdout
+	//c.logger.Infof("stdout: %s", stdOut.String())
 
 	//Command has run successfully
 	c.logger.Info("CLI call has been successful")

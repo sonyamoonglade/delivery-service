@@ -59,6 +59,14 @@ func ExtractTotalPrice(text string) int64 {
 	return sum
 }
 
+func CalculateTotalProductPrice(cart []tgdelivery.CartProduct) int64 {
+	var sum int64 = 0
+	for _, p := range cart {
+		sum += int64(p.Quantity) * p.Price
+	}
+	return sum
+}
+
 func ExtractUsername(text string) string {
 	spl := strings.Split(text, ": ")
 	name := spl[1]

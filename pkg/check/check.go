@@ -56,7 +56,8 @@ func (c *checkService) Format(doc *document.Document, dto dto.CheckDto) {
 				case "ord":
 					r.ClearContent()
 					ordIdStr := helpers.SixifyOrderId(dto.Order.OrderID)
-					r.AddText(fmt.Sprintf("#%s", ordIdStr))
+					text := fmt.Sprintf("#%s", ordIdStr)
+					r.AddText(text)
 				}
 			}
 		}
@@ -70,7 +71,36 @@ func (c *checkService) Format(doc *document.Document, dto dto.CheckDto) {
 				case "sum":
 					r.ClearContent()
 					strSum := strconv.Itoa(int(dto.Order.TotalCartPrice))
-					r.AddText(fmt.Sprintf("%s.0₽", strSum))
+					text := fmt.Sprintf("%s.0₽", strSum)
+					r.AddText(text)
+				case "punish":
+					//If not delivered dont care
+					if !dto.Order.IsDelivered {
+						r.ClearContent()
+						break
+					}
+
+					var punishmentv int64 = 0
+
+					//Compare total price for isPunished or not
+					actualSum := helpers.CalculateTotalProductPrice(dto.Order.Cart)
+
+					//Order is punished for delivery
+					if actualSum < dto.Order.TotalCartPrice {
+						punishmentv = dto.Order.TotalCartPrice - actualSum
+					}
+					//Fill punishment text
+					r.ClearContent()
+					text1 := "Оплата доставки"
+					r.AddText(text1)
+
+					r.AddTab()
+
+					text2 := fmt.Sprintf("%d.0 ₽", punishmentv)
+					if punishmentv == 0 {
+						text2 = "бесплатно"
+					}
+					r.AddText(text2)
 				}
 
 			}
@@ -134,6 +164,7 @@ func (c *checkService) Format(doc *document.Document, dto dto.CheckDto) {
 					r.AddText(fmt.Sprintf("%d * %d.0₽", p.Quantity, p.Price))
 					r.AddBreak()
 				}
+
 			}
 
 		}
