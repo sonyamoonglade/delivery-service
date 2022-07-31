@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
@@ -21,12 +21,19 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"go.uber.org/zap"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 )
 
 func main() {
 	log.Println("booting an application")
+
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, syscall.SIGTERM, os.Interrupt)
 
 	logger, err := logging.WithCfg(&logging.Config{
 		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
@@ -38,13 +45,14 @@ func main() {
 		log.Println(err.Error())
 	}
 
-	if err = godotenv.Load(".env"); err != nil {
+	//Load .env
+	if err = godotenv.Load(); err != nil {
 		logger.Error("Could not load environment variables")
 	}
 
 	appCfg, err := config.ReadConfig()
 	if err != nil {
-		logger.Error(fmt.Sprintf("Could not read from config. %s", err.Error()))
+		logger.Fatalf("Could not read from config. %s", err.Error())
 	}
 
 	db, err := postgres.Connect(&postgres.DbConfig{
@@ -55,7 +63,7 @@ func main() {
 		Database: appCfg.GetString("db.database"),
 	})
 	if err != nil {
-		logger.Error(fmt.Sprintf("Could not connect to database. %s", err.Error()))
+		logger.Fatalf("Could not connect to database. %s", err.Error())
 	}
 	logger.Info("Database has connected")
 
@@ -74,7 +82,7 @@ func main() {
 	}
 	botInstance, updCfg, err := bot.WithConfig(botCfg)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Could not initialize bot. %s", err.Error()))
+		logger.Fatalf("Could not initialize bot. %s", err.Error())
 	}
 	logger.Info("Bot has initialized")
 
@@ -110,9 +118,27 @@ func main() {
 	logger.Info("Bot is listening to updates")
 
 	server := tgdelivery.NewServerWithConfig(appCfg, router)
-	logger.Info(fmt.Sprintf("API server is listening on port %s", appCfg.GetString("app.port")))
-	if err = server.ListenAndServe(); err != nil {
-		logger.Error(fmt.Sprintf("Server could not start. %s", err.Error()))
-	}
 
+	//Start listening to requests
+	go func() {
+		if err = server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Errorf("Server could not start. %s", err.Error())
+		}
+	}()
+	logger.Infof("API server is listening on port %s", appCfg.GetString("app.port"))
+
+	//Graceful shutdown
+	<-exit
+	logger.Info("Shutting down gracefully...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	go func() {
+		//todo
+		defer cancel()
+	}()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Fatalf("could not shutdown httpserver. %s", err.Error())
+	}
+	logger.Info("ok")
 }

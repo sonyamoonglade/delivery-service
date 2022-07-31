@@ -15,5 +15,6 @@ func NewServerWithConfig(cfg *viper.Viper, h *httprouter.Router) *http.Server {
 		WriteTimeout:   5 * time.Second,
 		MaxHeaderBytes: 10 << 15,
 	}
+
 	return &s
 }
