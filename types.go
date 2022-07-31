@@ -7,7 +7,6 @@ type Order struct {
 	DeliveryDetails *DeliveryDetails `json:"delivery_details" validate:"required"`
 	TotalCartPrice  int64            `json:"total_cart_price" validate:"required"`
 	Pay             Pay              `json:"pay" validate:"required"`
-	IsPaid          bool             `json:"is_paid"`
 	IsDeliveredAsap bool             `json:"is_delivered_asap"`
 }
 

@@ -90,12 +90,3 @@ func IsDeliveredTranslate(isDelivered bool) string {
 		return "Нет"
 	}
 }
-
-func IsPaidTranslate(isPaid bool) string {
-	switch isPaid {
-	case true:
-		return "Оплачен"
-	default:
-		return "Не оплачен"
-	}
-}

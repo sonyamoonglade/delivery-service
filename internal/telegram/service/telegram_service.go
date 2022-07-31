@@ -45,7 +45,6 @@ func (s *telegramService) FormatTemplate(p *dto.CreateDelivery) string {
 	template := templates.DeliveryText
 
 	payTranslate := helpers.PayTranslate(p.Order.Pay)
-	isPaidTranslate := helpers.IsPaidTranslate(p.Order.IsPaid)
 	idLikeSix := helpers.SixifyOrderId(p.Order.OrderID)
 
 	usrMarkStr := "Метки пользователя: "
@@ -80,7 +79,6 @@ func (s *telegramService) FormatTemplate(p *dto.CreateDelivery) string {
 	template = strings.Replace(template, "ent", fmt.Sprintf("%d", p.Order.DeliveryDetails.EntranceNumber), -1)
 	template = strings.Replace(template, "gr", fmt.Sprintf("%d", p.Order.DeliveryDetails.Floor), -1)
 	template = strings.Replace(template, "fl", fmt.Sprintf("%d", p.Order.DeliveryDetails.FlatCall), -1)
-	template = strings.Replace(template, "is_paid", isPaidTranslate, -1)
 
 	//Comment
 	if p.Order.DeliveryDetails.Comment != "" {

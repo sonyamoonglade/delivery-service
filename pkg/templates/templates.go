@@ -59,7 +59,6 @@ const DeliveryText = "" +
 	"\n" +
 	"Сумма: sum.0 ₽\n" +
 	"Способ оплаты: pay\n" +
-	"Статус оплаты: is_paid\n" +
 	"\n" +
 	"Заказчик: username\n" +
 	"Номер телефона phoneNumber\n" +
