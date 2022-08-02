@@ -132,9 +132,9 @@ func main() {
 	logger.Info("Shutting down gracefully...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	go func() {
-		//todo
-		defer cancel()
+	defer func() {
+
+		cancel()
 	}()
 
 	if err := server.Shutdown(ctx); err != nil {
