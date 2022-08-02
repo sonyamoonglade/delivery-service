@@ -101,9 +101,10 @@ func (s *telegramService) ExtractDataFromText(text string) *bot.DataFromText {
 
 	//Split text by new line "\n"
 	splByNewLine := strings.Split(text, "\n")
+	//See templates.DeliveryText
 	ordLine := splByNewLine[0]
 	totalPriceLine := splByNewLine[2]
-	userLine := splByNewLine[6]
+	userLine := splByNewLine[5]
 
 	data := &bot.DataFromText{
 		OrderID:        helpers.ExtractOrderId(ordLine),
