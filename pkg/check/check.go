@@ -14,14 +14,18 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var FileDoesNotExist = errors.New("file does not exist")
 var ApiKeyHasExpired = errors.New("api key has expired")
 var NoApiKeysLeft = errors.New("no api keys left")
 
-const pathToKeys = "check/keys.txt"
-const pathToCheck = "check/check.docx"
+const (
+	pathToKeys        = "check/keys.txt"
+	pathToCheck       = "check/check.docx"
+	CheckWriteTimeout = time.Millisecond * 1500
+)
 
 type Service interface {
 	Format(doc *document.Document, dto dto.CheckDto)
