@@ -3,12 +3,12 @@ package httptransport
 import (
 	"context"
 	"github.com/julienschmidt/httprouter"
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/config"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
 	"github.com/sonyamoonglade/delivery-service/pkg/bot"
+	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/formatter"
@@ -62,7 +62,7 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 
 	//Imitate timeout
 	go func() {
-		time.Sleep(tgdelivery.CheckWriteTimeout)
+		time.Sleep(check.CheckWriteTimeout)
 		cancel()
 	}()
 
