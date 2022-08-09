@@ -1,18 +1,20 @@
-package transport
+package telegram
 
 import (
-	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/pkg/errors"
+	"github.com/sonyamoonglade/delivery-service/config"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	dlvDto "github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
-	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	"github.com/sonyamoonglade/delivery-service/pkg/callback"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
+	"github.com/sonyamoonglade/delivery-service/pkg/formatter"
 	"github.com/sonyamoonglade/delivery-service/pkg/helpers"
+	tgDto "github.com/sonyamoonglade/delivery-service/pkg/telegram/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
 	"reflect"
@@ -20,26 +22,35 @@ import (
 	"time"
 )
 
-type telegramHandler struct {
+type Transport interface {
+	ListenForUpdates()
+}
+
+type telegramTransport struct {
 	logger          *zap.SugaredLogger
-	bot             *tg.BotAPI
-	telegramService telegram.Service
+	bot             bot.Bot
 	runnerService   runner.Service
 	deliveryService delivery.Service
+	extractFmt      formatter.ExtractFormatter
 }
 
-func NewTgHandler(logger *zap.SugaredLogger, bot *tg.BotAPI, run runner.Service, del delivery.Service, tgService telegram.Service) telegram.Transport {
-	return &telegramHandler{logger: logger, bot: bot, runnerService: run, deliveryService: del, telegramService: tgService}
+func NewTelegramTransport(logger *zap.SugaredLogger, bot bot.Bot, run runner.Service, del delivery.Service, extractFormatter formatter.ExtractFormatter) Transport {
+	return &telegramTransport{logger: logger, bot: bot, runnerService: run, deliveryService: del, extractFmt: extractFormatter}
 }
 
-func (h *telegramHandler) ListenForUpdates(bot *tg.BotAPI, cfg tg.UpdateConfig) {
-	updates := bot.GetUpdatesChan(cfg)
+func (h *telegramTransport) ListenForUpdates() {
+
+	client := h.bot.GetTelegramClient()
+	cfg := h.bot.GetUpdatesConfig()
+
+	updates := client.GetUpdatesChan(cfg)
+
 	for u := range updates {
 		h.handle(&u)
 	}
 }
 
-func (h *telegramHandler) handle(u *tg.Update) {
+func (h *telegramTransport) handle(u *tg.Update) {
 
 	switch {
 	case u.Message != nil && u.Message.Contact != nil:
@@ -57,10 +68,10 @@ func (h *telegramHandler) handle(u *tg.Update) {
 
 }
 
-func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
+func (h *telegramTransport) HandleCallback(cb *tg.CallbackQuery) {
 
 	rcvFromGroup := cb.Message.Chat.IsGroup()
-	grpChatID := bot.GetGroupChatId()
+	grpChatID := h.bot.GetGroupChatId()
 	//usrID can be used as chatID for private messages
 	usrID := cb.From.ID
 	msgID := cb.Message.MessageID
@@ -70,7 +81,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 
 	h.logger.Debugf("received a callback data=%s from '%d'", callbackData, usrID)
 
-	txtData := h.telegramService.ExtractDataFromText(inititalMsg)
+	txtData := h.extractFmt.ExtractDataFromText(inititalMsg)
 	h.logger.Debugf("Extracted text-data %v", txtData)
 
 	switch rcvFromGroup {
@@ -112,22 +123,22 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 		//Get initial message text
 
 		//Apply extra parameters for runner's comfort
-		personalData := bot.PersonalReserveReplyDto{
+		personalData := tgDto.PersonalReserveReplyDto{
 			DeliveryID: inp.DeliveryID,
 			ReservedAt: reservedAt,
 		}
-		personalMsg := inititalMsg + bot.PersonalAfterReserveReply(personalData)
+		personalMsg := inititalMsg + h.extractFmt.PersonalAfterReserveReply(personalData, config.TempOffset)
 
 		//TODO: table to save chat's locales to print time
 		//Send to runner's private messages so he follows the delivery
 		msg := tg.NewMessage(usrID, personalMsg)
-		msg.ReplyMarkup = bot.CompleteDeliveryKeyboard(inp)
+		msg.ReplyMarkup = h.bot.CompleteDeliveryKeyboard(inp)
 		h.Send(msg)
 		h.logger.Debug("Sent private after-reserve reply")
 		//Extracted data from initial delivery message
 
 		//Prepare new group message (edit initial)
-		groupData := bot.GroupReserveReplyDto{
+		groupData := tgDto.GroupReserveReplyDto{
 			DeliveryID:     inp.DeliveryID,
 			ReservedAt:     reservedAt,
 			OrderID:        helpers.SixifyOrderId(txtData.OrderID),
@@ -136,7 +147,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 			RunnerUsername: rn.Username,
 		}
 		//Sent short and informative message to delivery group
-		editMsg := tg.NewEditMessageText(grpChatID, msgID, bot.GroupAfterReserveReply(groupData))
+		editMsg := tg.NewEditMessageText(grpChatID, msgID, h.extractFmt.GroupAfterReserveReply(groupData, config.TempOffset))
 		h.Send(editMsg)
 		h.logger.Debug("Sent group after-reserve reply")
 
@@ -169,7 +180,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 		//Delivery is completed
 		h.logger.Debugf("Completed delivery %d", inp.DeliveryID)
 
-		data := bot.PersonalCompleteReplyDto{
+		data := tgDto.PersonalCompleteReplyDto{
 			DeliveryID:     inp.DeliveryID,
 			OrderID:        helpers.SixifyOrderId(txtData.OrderID),
 			Username:       txtData.Username,
@@ -177,7 +188,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 		}
 
 		//Edit after-reserve delivery text for short and informative after-complete message
-		aftCompleteMsg := tg.NewEditMessageText(usrID, msgID, bot.AfterCompleteReply(data))
+		aftCompleteMsg := tg.NewEditMessageText(usrID, msgID, h.extractFmt.AfterCompleteReply(data))
 		h.Send(aftCompleteMsg)
 		h.logger.Debugf("Sent after-complete message to %d", usrID)
 
@@ -188,7 +199,7 @@ func (h *telegramHandler) HandleCallback(cb *tg.CallbackQuery) {
 	//todo:update message with check mark, send delivery to pm by usrID
 }
 
-func (h *telegramHandler) HandleMessage(m *tg.Message) {
+func (h *telegramTransport) HandleMessage(m *tg.Message) {
 	//todo: parse /start and return command array
 	h.logger.Debugf("received a message '%s' from '%s' chat '%d'", m.Text, m.From.UserName, m.Chat.ID)
 
@@ -209,7 +220,7 @@ func (h *telegramHandler) HandleMessage(m *tg.Message) {
 
 			if !ok {
 				msg := tg.NewMessage(chatID, templates.UsrIsNotKnownByTelegram)
-				msg.ReplyMarkup = bot.GreetingKeyboard()
+				msg.ReplyMarkup = h.bot.GreetingKeyboard()
 				h.Send(msg)
 				return
 			}
@@ -225,8 +236,9 @@ func (h *telegramHandler) HandleMessage(m *tg.Message) {
 	switch m.Text {
 	case "/work":
 		msg := tg.NewMessage(chatID, templates.ComeHere)
-		msg.ReplyMarkup = bot.LinkButton()
-		sentMsg, _ := h.bot.Send(msg)
+		msg.ReplyMarkup = h.bot.LinkButton()
+		//use of native send
+		sentMsg, _ := h.bot.GetTelegramClient().Send(msg)
 
 		//Introduce some delay for teapots
 		time.Sleep(time.Second * 3)
@@ -241,7 +253,7 @@ func (h *telegramHandler) HandleMessage(m *tg.Message) {
 	}
 }
 
-func (h *telegramHandler) HandleContact(m *tg.Message) {
+func (h *telegramTransport) HandleContact(m *tg.Message) {
 
 	c := m.Contact
 	chatID := m.Chat.ID
@@ -283,13 +295,13 @@ func (h *telegramHandler) HandleContact(m *tg.Message) {
 	return
 }
 
-func (h *telegramHandler) ResponseWithError(err error, chatID int64) {
+func (h *telegramTransport) ResponseWithError(err error, chatID int64) {
 	var e tgErrors.TelegramError
 
 	if errors.As(err, &e) {
 
 		msg := tg.NewMessage(chatID, e.Error())
-		if ok, kb := bot.ParseErrorForKeyboard(e); ok == true {
+		if ok, kb := h.bot.ParseErrorForKeyboard(e); ok == true {
 			msg.ReplyMarkup = kb
 		}
 
@@ -299,19 +311,19 @@ func (h *telegramHandler) ResponseWithError(err error, chatID int64) {
 		return
 	}
 	msg := tg.NewMessage(chatID, templates.InternalServiceError)
-	msg.ReplyMarkup = bot.InternalErrorKeyboard()
+	msg.ReplyMarkup = h.bot.InternalErrorKeyboard()
 	h.Send(msg)
 	h.logger.Error(err.Error())
 	return
 }
 
-func (h *telegramHandler) AnswerCallback(callbackID string) {
+func (h *telegramTransport) AnswerCallback(callbackID string) {
 	response := tg.NewCallback(callbackID, "")
 	h.Send(response)
 	return
 }
 
-func (h *telegramHandler) Send(c tg.Chattable) {
+func (h *telegramTransport) Send(c tg.Chattable) {
 
 	inpTyp := reflect.TypeOf(c)
 	delTyp := reflect.TypeOf(tg.DeleteMessageConfig{})
@@ -332,7 +344,7 @@ func (h *telegramHandler) Send(c tg.Chattable) {
 		chatID = 0
 	}
 
-	if _, err := h.bot.Request(c); err != nil {
+	if _, err := h.bot.GetTelegramClient().Request(c); err != nil {
 		if chatID != 0 {
 			h.ResponseWithError(err, chatID)
 		}

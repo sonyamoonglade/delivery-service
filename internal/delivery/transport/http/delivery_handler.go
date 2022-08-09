@@ -4,12 +4,14 @@ import (
 	"context"
 	"github.com/julienschmidt/httprouter"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
+	"github.com/sonyamoonglade/delivery-service/config"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
-	"github.com/sonyamoonglade/delivery-service/internal/telegram"
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
+	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
+	"github.com/sonyamoonglade/delivery-service/pkg/formatter"
 	"github.com/sonyamoonglade/delivery-service/pkg/responder"
 	"go.uber.org/zap"
 	"net/http"
@@ -19,11 +21,12 @@ import (
 type deliveryHandler struct {
 	logger          *zap.SugaredLogger
 	deliveryService delivery.Service
-	telegramService telegram.Service
+	extractFmt      formatter.ExtractFormatter
+	bot             bot.Bot
 }
 
-func NewDeliveryHandler(logger *zap.SugaredLogger, delivery delivery.Service, tg telegram.Service) delivery.Transport {
-	return &deliveryHandler{logger: logger, deliveryService: delivery, telegramService: tg}
+func NewDeliveryHandler(logger *zap.SugaredLogger, delivery delivery.Service, extractFormatter formatter.ExtractFormatter, bot bot.Bot) delivery.Transport {
+	return &deliveryHandler{logger: logger, deliveryService: delivery, extractFmt: extractFormatter, bot: bot}
 }
 
 func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
@@ -127,12 +130,10 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 	}
 	h.logger.Debug("created delivery in database")
 	//todo: mv template to templates, func to bot pkg
-	telegramMsg := h.telegramService.FormatTemplate(&payload)
+	telegramMsg := h.extractFmt.FormatTemplate(&payload, config.TempOffset)
 	h.logger.Debug("formatted telegram template")
 
-	//Data for telegram button callback query
-
-	err = h.telegramService.Send(telegramMsg, deliveryID)
+	err = h.bot.PostDeliveryMessage(telegramMsg, deliveryID)
 	if err != nil {
 
 		code, R := httpErrors.Response(err)

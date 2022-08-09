@@ -12,19 +12,18 @@ import (
 	runnService "github.com/sonyamoonglade/delivery-service/internal/runner/service"
 	runnStorage "github.com/sonyamoonglade/delivery-service/internal/runner/storage"
 	runnHttp "github.com/sonyamoonglade/delivery-service/internal/runner/transport/http"
-	tgService "github.com/sonyamoonglade/delivery-service/internal/telegram/service"
-	tgTransport "github.com/sonyamoonglade/delivery-service/internal/telegram/transport"
-	bot "github.com/sonyamoonglade/delivery-service/pkg/bot"
+	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
+	"github.com/sonyamoonglade/delivery-service/pkg/formatter"
 	"github.com/sonyamoonglade/delivery-service/pkg/logging"
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
+	"github.com/sonyamoonglade/delivery-service/pkg/telegram"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 )
@@ -50,39 +49,20 @@ func main() {
 		logger.Error("Could not load environment variables")
 	}
 
-	appCfg, err := config.ReadConfig()
+	appCfg, err := config.GetAppConfig()
 	if err != nil {
 		logger.Fatalf("Could not read from config. %s", err.Error())
 	}
 
-	db, err := postgres.Connect(&postgres.DbConfig{
-		User:     appCfg.GetString("db.user"),
-		Password: os.Getenv("DB_PASSWORD"),
-		Host:     appCfg.GetString("db.host"),
-		Port:     appCfg.GetInt64("db.port"),
-		Database: appCfg.GetString("db.database"),
-	})
+	db, err := postgres.Connect(appCfg.Db)
 	if err != nil {
 		logger.Fatalf("Could not connect to database. %s", err.Error())
 	}
 	logger.Info("Database has connected")
 
-	grpChatID, err := strconv.ParseInt(os.Getenv("GROUP_CHAT_ID"), 10, 64)
+	appBot, err := bot.NewBot(appCfg.Bot, logger)
 	if err != nil {
-		logger.Errorf("could not get group chat id. %s", err.Error())
-	}
-
-	botCfg := &bot.Config{
-		Token:        os.Getenv(tgdelivery.BOT_TOKEN),
-		Timeout:      60,
-		Debug:        false,
-		TelegramLink: os.Getenv("BOT_URL"),
-		AdminLink:    os.Getenv("ADMIN_URL"),
-		GroupChatID:  grpChatID,
-	}
-	botInstance, updCfg, err := bot.WithConfig(botCfg)
-	if err != nil {
-		logger.Fatalf("Could not initialize bot. %s", err.Error())
+		logger.Fatalf("Could not initialize newBot. %s", err.Error())
 	}
 	logger.Info("Bot has initialized")
 
@@ -92,6 +72,8 @@ func main() {
 		logger.Error(err.Error())
 	}
 
+	extractFmt := formatter.NewFormatter(logger)
+
 	//Initialize storage
 	runnerStorage := runnStorage.NewRunnerStorage(db)
 	deliveryStorage := dlvStorage.NewDeliveryStorage(db)
@@ -99,12 +81,11 @@ func main() {
 	//Initialize service
 	checkService := check.NewCheckService()
 	deliveryService := dlvService.NewDeliveryService(logger, deliveryStorage, cliClient, checkService)
-	telegramService := tgService.NewTelegramService(logger, botInstance)
 	runnerService := runnService.NewRunnerService(logger, runnerStorage)
 
 	//Initialize transport
-	telegramHandler := tgTransport.NewTgHandler(logger, botInstance, runnerService, deliveryService, telegramService)
-	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, telegramService)
+	telegramHandler := telegram.NewTelegramTransport(logger, appBot, runnerService, deliveryService, extractFmt)
+	deliveryHandler := dlvHttp.NewDeliveryHandler(logger, deliveryService, extractFmt, appBot)
 	runnerHandler := runnHttp.NewRunnerHandler(logger, runnerService)
 
 	//Initialize router
@@ -114,10 +95,10 @@ func main() {
 	runnerHandler.RegisterRoutes(router)
 	logger.Info("API Routes has initialized")
 
-	go telegramHandler.ListenForUpdates(botInstance, updCfg)
+	go telegramHandler.ListenForUpdates()
 	logger.Info("Bot is listening to updates")
 
-	server := tgdelivery.NewServerWithConfig(appCfg, router)
+	server := tgdelivery.NewServerWithConfig(appCfg.App, router)
 
 	//Start listening to requests
 	go func() {
@@ -125,7 +106,7 @@ func main() {
 			logger.Errorf("Server could not start. %s", err.Error())
 		}
 	}()
-	logger.Infof("API server is listening on port %s", appCfg.GetString("app.port"))
+	logger.Infof("API server is listening on port %s", appCfg.App.Port)
 
 	//Graceful shutdown
 	<-exit

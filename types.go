@@ -63,10 +63,6 @@ var (
 	OnPickup Pay = "onPickup"
 )
 
-var (
-	BOT_TOKEN = "BOT_TOKEN"
-)
-
 type DeliveryStatus struct {
 	OrderID int64 `json:"orderId"`
 	Status  bool  `json:"status"`
