@@ -1,7 +1,12 @@
 cmd/done.docx
 .idea
 .env
-docker/*
+docker/pgdata
+docker/docker-compose.yaml
+
 /bin
 /check
 cmd/test
+.env.local
+.env.prod
+prod.config.yaml

@@ -1,0 +1,4 @@
+/bin
+/docker/pgdata
+/docker/docker-compose.yaml
+.env.example

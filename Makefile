@@ -12,22 +12,14 @@ build-cli:
 run:
 	go run cmd/app/main.go
 
-migrate-up:
-	migrate -database "$(DB_URL)" -path migrations -verbose up
+build-delivery-local:
+	docker build -f ./docker/local.Dockerfile -t sonyamoonglade/sancho-hub:delivery-local .
 
-migrate-down:
-	migrate -database "$(DB_URL)" -path migrations -verbose down
+build-delivery-prod:
+	docker build -f ./docker/prod.Dockerfile -t sonyamoonglade/sancho-hub:delivery-prod .
 
-run-db:
-	docker-compose -f docker/docker-compose.yaml up --detach
+run-delivery-local:
+	docker run -d -p 9000:9000 --env-file ./.env.local sonyamoonglade/sancho-hub:delivery-local
 
-stop-db:
-	docker-compose -f docker/docker-compose.yaml down
-
-local-migrate-up:
-	migrate -path migrations -database "postgresql://dlvuser:dlvuserpwd@localhost:5433/delivery?sslmode=disable" -verbose up
-
-local-migrate-down:
-	migrate -database "postgresql://dlvuser:dlvuserpwd@localhost:5433/delivery?sslmode=disable" -path migrations -verbose down
-
-
+run-delivery-prod:
+	docker run -d -p 9000:9000 --env-file ./.env.prod sonyamoonglade/sancho-hub:delivery-prod

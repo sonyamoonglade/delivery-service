@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	_ "github.com/golang-migrate/migrate/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
+	_ "github.com/lib/pq"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/config"
 	dlvService "github.com/sonyamoonglade/delivery-service/internal/delivery/service"
@@ -17,6 +20,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/formatter"
 	"github.com/sonyamoonglade/delivery-service/pkg/logging"
+	"github.com/sonyamoonglade/delivery-service/pkg/migrate"
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"github.com/sonyamoonglade/delivery-service/pkg/telegram"
 	"go.uber.org/zap"
@@ -44,9 +48,10 @@ func main() {
 		log.Println(err.Error())
 	}
 
-	//Load .env
-	if err = godotenv.Load(); err != nil {
-		logger.Error("Could not load environment variables")
+	//Load .env.local for local development
+	if err = godotenv.Load(".env.local"); err != nil {
+		logger.Errorf("Could not load environment variables. %s", err.Error())
+		logger.Infof("Ignore this message if app is ran by docker. %s", err.Error())
 	}
 
 	appCfg, err := config.GetAppConfig()
@@ -60,16 +65,27 @@ func main() {
 	}
 	logger.Info("Database has connected")
 
+	ok, err := migrate.Up(logger, db)
+	if err != nil {
+		logger.Fatalf("Could not run migrations. %s", err.Error())
+	}
+	if !ok {
+		logger.Fatalf("Error runnning migrations.")
+	}
+	if ok {
+		logger.Info("Database is sync with migrations")
+	}
+
 	appBot, err := bot.NewBot(appCfg.Bot, logger)
 	if err != nil {
 		logger.Fatalf("Could not initialize newBot. %s", err.Error())
 	}
 	logger.Info("Bot has initialized")
 
-	cliClient := cli.NewCli(logger)
+	cliClient := cli.NewCli(logger, appCfg.App)
 
 	if err := cliClient.Ping(); err != nil {
-		logger.Error(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
 	extractFmt := formatter.NewFormatter(logger)

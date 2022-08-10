@@ -71,6 +71,7 @@ func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.Deli
 
 	bools, err := s.storage.Status(dto.OrderIDs)
 	if err != nil {
+		s.logger.Error(err.Error())
 		return nil, httpErrors.InternalError()
 	}
 

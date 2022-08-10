@@ -11,6 +11,7 @@ import (
 
 type App struct {
 	Port string
+	Os   string
 }
 
 type AppConfig struct {
@@ -124,8 +125,14 @@ func GetAppConfig() (AppConfig, error) {
 	}
 	TempOffset = offsetLikeInt
 
+	opSys, ok := os.LookupEnv("GOOS")
+	if ok != true {
+		return AppConfig{}, errors.New("missing GOOS")
+	}
+
 	appCfg := &App{
 		Port: appPort,
+		Os:   opSys,
 	}
 
 	return AppConfig{
@@ -138,8 +145,19 @@ func GetAppConfig() (AppConfig, error) {
 
 func readConfig() (*viper.Viper, error) {
 
+	env, ok := os.LookupEnv("ENV")
+	if ok != true {
+		return nil, errors.New("missing ENV")
+	}
+
+	name := "config"
+
+	if env == "production" {
+		name = "prod.config"
+	}
+
 	viper.AddConfigPath(".")
-	viper.SetConfigName("config")
+	viper.SetConfigName(name)
 	viper.SetConfigType("yaml")
 
 	if err := viper.ReadInConfig(); err != nil {

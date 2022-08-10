@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sonyamoonglade/delivery-service/config"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"go.uber.org/zap"
@@ -16,6 +17,8 @@ import (
 var TimeoutError = errors.New("operation takes too long")
 var CliError = errors.New("internal cli error")
 
+var PathToExecutable string
+
 type Cli interface {
 	WriteCheck(dto dto.CheckDtoForCli) error
 	Ping() error
@@ -26,7 +29,16 @@ type cli struct {
 	mut    sync.Mutex
 }
 
-func NewCli(logger *zap.SugaredLogger) Cli {
+func NewCli(logger *zap.SugaredLogger, config *config.App) Cli {
+	os := config.Os
+
+	if os == strings.ToLower("linux") {
+		PathToExecutable = "./bin/cli"
+	}
+	if os == strings.ToLower("windows") {
+		PathToExecutable = "bin/cli.exe"
+	}
+
 	return &cli{
 		logger: logger,
 		mut:    sync.Mutex{},
@@ -49,10 +61,8 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 	//Optional
 	//var stdOut buffer.Buffer
 
-	command := fmt.Sprintf("bin/cli.exe")
-
 	// pass -dto flag with string dto
-	cmd := exec.Command(command, "-dto", fmt.Sprintf(`%s`, strForCli))
+	cmd := exec.Command(PathToExecutable, "-dto", fmt.Sprintf(`%s`, strForCli))
 
 	cmd.Stderr = &stdErr
 	//Optional
@@ -84,11 +94,10 @@ func (c *cli) Ping() error {
 	var stdOut buffer.Buffer
 	var stdErr buffer.Buffer
 
-	command := "bin/cli.exe"
 	flags := "-ping"
-	c.logger.Debugf("command: %s. flags: %s", command, flags)
+	c.logger.Debugf("command: %s. flags: %s", PathToExecutable, flags)
 
-	cmd := exec.Command(command, flags)
+	cmd := exec.Command(PathToExecutable, flags)
 
 	cmd.Stderr = &stdErr
 	cmd.Stdout = &stdOut

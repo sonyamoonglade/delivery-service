@@ -2,10 +2,10 @@ app:
   port: "9000"
   baseOffset: "4"
 db:
-  user: "dlvuser"
-  database: "delivery"
-  host: "localhost"
-  port: "5433"
+  user: "fjausfhw"
+  database: "fjausfhw"
+  host: "abul.db.elephantsql.com"
+  port: "5432"
 
 
 
