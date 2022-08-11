@@ -24,7 +24,7 @@ var NoApiKeysLeft = errors.New("no api keys left")
 const (
 	pathToKeys        = "check/keys.txt"
 	pathToCheck       = "check/check.docx"
-	CheckWriteTimeout = time.Millisecond * 1500
+	CheckWriteTimeout = time.Millisecond * 5000
 )
 
 type Service interface {

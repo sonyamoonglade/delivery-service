@@ -15,7 +15,6 @@ type Config struct {
 	URL         string
 	GroupChatID int64
 	BotToken    string
-	BotLink     string
 	AdminLink   string
 }
 
@@ -53,12 +52,11 @@ func NewBot(v *Config, logger *zap.SugaredLogger) (Bot, error) {
 
 	updateCfg.Offset = 0
 	updateCfg.Timeout = v.Timeout
-
 	return &bot{
 		logger:         logger,
 		telegramClient: client,
 		updateConfig:   updateCfg,
-		botLink:        v.BotLink,
+		botLink:        v.URL,
 		adminLink:      v.AdminLink,
 		groupChatID:    v.GroupChatID,
 	}, nil
@@ -88,7 +86,6 @@ func (t *bot) GetTelegramClient() *tg.BotAPI {
 	return t.telegramClient
 }
 func (t *bot) LinkButton() tg.InlineKeyboardMarkup {
-
 	b := tg.InlineKeyboardButton{
 		Text: "Перейти к боту",
 		URL:  &t.botLink,

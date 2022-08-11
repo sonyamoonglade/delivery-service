@@ -23,3 +23,6 @@ run-delivery-local:
 
 run-delivery-prod:
 	docker run -d -p 9000:9000 --env-file ./.env.prod sonyamoonglade/sancho-hub:delivery-prod
+
+cp-env:
+	cp .env.prod ../../sancho-console/delivery/

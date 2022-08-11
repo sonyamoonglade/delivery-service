@@ -236,10 +236,18 @@ func (h *telegramTransport) HandleMessage(m *tg.Message) {
 	switch m.Text {
 	case "/work":
 		msg := tg.NewMessage(chatID, templates.ComeHere)
-		msg.ReplyMarkup = h.bot.LinkButton()
-		//use of native send
-		sentMsg, _ := h.bot.GetTelegramClient().Send(msg)
 
+		kb := h.bot.LinkButton()
+		msg.ReplyMarkup = kb
+
+		b := h.bot.GetTelegramClient()
+
+		//use of native send
+		sentMsg, err := b.Send(msg)
+
+		if err != nil {
+			h.ResponseWithError(err, chatID)
+		}
 		//Introduce some delay for teapots
 		time.Sleep(time.Second * 3)
 

@@ -46,10 +46,10 @@ func NewCli(logger *zap.SugaredLogger, config *config.App) Cli {
 }
 
 func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
-	//mutex here
 
 	c.mut.Lock()
 	defer c.mut.Unlock()
+
 	byt, err := json.Marshal(dto)
 	if err != nil {
 		return err
@@ -59,14 +59,14 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 
 	var stdErr buffer.Buffer
 	//Optional
-	//var stdOut buffer.Buffer
+	var stdOut buffer.Buffer
 
 	// pass -dto flag with string dto
 	cmd := exec.Command(PathToExecutable, "-dto", fmt.Sprintf(`%s`, strForCli))
 
 	cmd.Stderr = &stdErr
 	//Optional
-	//cmd.Stdout = &stdOut
+	cmd.Stdout = &stdOut
 
 	if err := cmd.Run(); err != nil {
 		//If error occurs -> return
@@ -78,7 +78,7 @@ func (c *cli) WriteCheck(dto dto.CheckDtoForCli) error {
 		return CliError
 	}
 	//Optional stdout
-	//c.logger.Infof("stdout: %s", stdOut.String())
+	c.logger.Infof("stdout: %s", stdOut.String())
 
 	//Command has run successfully
 	c.logger.Info("CLI call has been successful")
