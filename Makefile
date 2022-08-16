@@ -13,7 +13,7 @@ run:
 	go run cmd/app/main.go
 
 build-delivery-local:
-	docker build -f ./docker/local.Dockerfile -t sonyamoonglade/sancho-hub:delivery-local .
+	docker build -f ./docker/local.Dockerfile -t sonyamoonglade/sancho-hub:delivery-local . && docker push sonyamoonglade/sancho-hub:delivery-local
 
 build-delivery-prod:
 	docker build -f ./docker/prod.Dockerfile -t sonyamoonglade/sancho-hub:delivery-prod .

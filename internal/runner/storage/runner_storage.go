@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -22,6 +23,29 @@ const (
 	runnerTable         = "runner"
 	telegramRunnerTable = "telegram_runner"
 )
+
+func (s *runnerStorage) All(ctx context.Context) ([]*entity.Runner, error) {
+
+	q := fmt.Sprintf("SELECT phone_number, username FROM %s", runnerTable)
+	var runners []*entity.Runner
+	rows, err := s.db.QueryxContext(ctx, q)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []*entity.Runner{}, nil
+		}
+		return nil, err
+	}
+
+	for rows.Next() {
+		var r entity.Runner
+		err = rows.StructScan(&r)
+		if err != nil {
+			return nil, err
+		}
+		runners = append(runners, &r)
+	}
+	return runners, nil
+}
 
 func (s *runnerStorage) GetByTelegramId(tgUsrID int64) (*entity.Runner, error) {
 

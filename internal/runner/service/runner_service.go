@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"github.com/sonyamoonglade/delivery-service/internal/entity"
@@ -21,6 +22,9 @@ func NewRunnerService(logger *zap.SugaredLogger, storage runner.Storage) runner.
 	return &runnerService{logger: logger, storage: storage}
 }
 
+func (s *runnerService) All(ctx context.Context) ([]*entity.Runner, error) {
+	return s.storage.All(ctx)
+}
 func (s *runnerService) GetByTelegramId(tgUsrID int64) (*entity.Runner, error) {
 
 	runnerID, err := s.storage.GetByTelegramId(tgUsrID)

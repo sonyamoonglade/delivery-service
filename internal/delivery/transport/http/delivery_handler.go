@@ -34,6 +34,7 @@ func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
 	r.POST("/api/delivery", h.CreateDelivery)
 	r.POST("/api/delivery/status", h.Status)
 	r.POST("/api/check", h.Check)
+
 }
 
 func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

@@ -24,6 +24,21 @@ func (h *runnerHandler) RegisterRoutes(r *httprouter.Router) {
 
 	r.POST("/api/runner/", h.Register)
 	r.DELETE("/api/runner/ban", h.Ban)
+	r.GET("/api/runner/", h.All)
+}
+
+func (h *runnerHandler) All(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	runners, err := h.runnerService.All(req.Context())
+	if err != nil {
+		code, R := httpErrors.Response(err)
+		responder.JSON(w, code, R)
+		h.logger.Error(err.Error())
+		return
+	}
+
+	responder.JSON(w, 200, responder.R{
+		"runners": runners,
+	})
 }
 
 func (h *runnerHandler) Register(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
