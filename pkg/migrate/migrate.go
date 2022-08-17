@@ -1,20 +1,23 @@
 package migrate
 
 import (
+	"database/sql"
 	"github.com/golang-migrate/migrate"
 	"github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/source/file"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
 
-func Up(logger *zap.SugaredLogger, db *sqlx.DB) (bool, error) {
+//Up takes existing zap.SugaredLogger instance and sqlx.DB instance
+//Utilizes postgres connection
+//Looks up for migrations/ folder in the root
+//Logs each migration step
+func Up(logger *zap.SugaredLogger, db *sql.DB) (bool, error) {
 
-	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	logger.Info("Initialized driver for migrations")
 	if err != nil {
 		return false, err

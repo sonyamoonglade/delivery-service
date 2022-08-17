@@ -2,8 +2,8 @@ package postgres
 
 import (
 	"fmt"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 )
 
 type Config struct {
@@ -14,7 +14,7 @@ type Config struct {
 	Database string
 }
 
-const dialect = "postgres"
+const dialect = "pgx"
 
 func Connect(c *Config) (*sqlx.DB, error) {
 

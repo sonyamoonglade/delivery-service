@@ -6,7 +6,6 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
-	_ "github.com/lib/pq"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/config"
 	dlvService "github.com/sonyamoonglade/delivery-service/internal/delivery/service"
@@ -113,7 +112,9 @@ func main() {
 
 	go telegramHandler.ListenForUpdates()
 	logger.Info("Bot is listening to updates")
-
+	//Bot cant run more than 1 instance at a time
+	//d := telegramHandler
+	//_ = d
 	server := tgdelivery.NewServerWithConfig(appCfg.App, router)
 
 	//Start listening to requests
