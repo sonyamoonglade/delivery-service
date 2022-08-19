@@ -2,6 +2,13 @@ package main
 
 import (
 	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	_ "github.com/golang-migrate/migrate/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/joho/godotenv"
@@ -23,12 +30,6 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"github.com/sonyamoonglade/delivery-service/pkg/telegram"
 	"go.uber.org/zap"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 func main() {
@@ -64,7 +65,7 @@ func main() {
 	}
 	logger.Info("Database has connected")
 
-	ok, err := migrate.Up(logger, db)
+	ok, err := migrate.Up(logger, db.DB)
 	if err != nil {
 		logger.Fatalf("Could not run migrations. %s", err.Error())
 	}
