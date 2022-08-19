@@ -9,4 +9,5 @@ docker/docker-compose.yaml
 cmd/test
 .env.local
 .env.prod
+logs/log.txt
 prod.config.yaml
