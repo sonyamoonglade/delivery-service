@@ -3,13 +3,13 @@ package binder
 import (
 	"encoding/json"
 	"errors"
-	"github.com/go-playground/validator/v10"
-	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"io"
-	"log"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 )
 
 type BindingError struct {
@@ -46,7 +46,6 @@ func Bind(r io.Reader, out interface{}) error {
 	typ := reflect.TypeOf(out)
 	typDest := reflect.New(typ).Interface()
 	if err = json.Unmarshal(bytes, &typDest); err != nil {
-		log.Println(err.Error())
 		return httpErrors.BadRequestError(httpErrors.BadRequest)
 	}
 	//Local reflect.Value
