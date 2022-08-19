@@ -28,17 +28,19 @@ func WithCfg(cfg *Config) (*zap.SugaredLogger, error) {
 	builder.Level = cfg.Level
 	builder.Development = cfg.DevMode
 
-	defaultPath := "./logs/log.txt"
+	if cfg.DevMode == false {
+		defaultPath := "./logs/log.txt"
 
-	_, err := os.Stat(defaultPath)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			panic(fmt.Sprintf("file %s does not exist", defaultPath))
+		_, err := os.Stat(defaultPath)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				panic(fmt.Sprintf("file %s does not exist", defaultPath))
+			}
+			panic(err.Error())
 		}
-		panic(err.Error())
+		//For production log to file
+		builder.OutputPaths = []string{defaultPath}
 	}
-
-	builder.OutputPaths = []string{defaultPath}
 
 	logger, err := builder.Build()
 	if err != nil {

@@ -1,0 +1,26 @@
+{"level":"info","ts":1660925905.3331015,"caller":"app/main.go:66","msg":"Database has connected"}
+{"level":"info","ts":1660925905.5954833,"caller":"migrate/migrate.go:21","msg":"Initialized driver for migrations"}
+{"level":"info","ts":1660925905.5969021,"caller":"migrate/migrate.go:30","msg":"Migrations are found, driver is set"}
+{"level":"info","ts":1660925905.8728652,"caller":"app/main.go:76","msg":"Database is sync with migrations"}
+{"level":"info","ts":1660925906.2052474,"caller":"app/main.go:83","msg":"Bot has initialized"}
+{"level":"info","ts":1660925906.2052474,"caller":"cli/cli.go:92","msg":"pinging cli"}
+{"level":"debug","ts":1660925906.2052474,"caller":"cli/cli.go:98","msg":"command: bin/cli.exe. flags: -ping"}
+{"level":"info","ts":1660925906.2501276,"caller":"cli/cli.go:112","msg":"CLI ping has been successful"}
+{"level":"info","ts":1660925906.2502477,"caller":"app/main.go:112","msg":"API Routes has initialized"}
+{"level":"info","ts":1660925906.2502477,"caller":"app/main.go:115","msg":"Bot is listening to updates"}
+{"level":"info","ts":1660925906.2502477,"caller":"app/main.go:127","msg":"API server is listening on port 9000"}
+{"level":"info","ts":1660925913.6898766,"caller":"app/main.go:131","msg":"Shutting down gracefully..."}
+{"level":"info","ts":1660925913.6950085,"caller":"app/main.go:142","msg":"ok"}
+{"level":"info","ts":1660925919.0252695,"caller":"app/main.go:66","msg":"Database has connected"}
+{"level":"info","ts":1660925919.555222,"caller":"migrate/migrate.go:21","msg":"Initialized driver for migrations"}
+{"level":"info","ts":1660925919.5553977,"caller":"migrate/migrate.go:30","msg":"Migrations are found, driver is set"}
+{"level":"info","ts":1660925919.8252065,"caller":"app/main.go:76","msg":"Database is sync with migrations"}
+{"level":"info","ts":1660925920.3596418,"caller":"app/main.go:83","msg":"Bot has initialized"}
+{"level":"info","ts":1660925920.3596418,"caller":"cli/cli.go:92","msg":"pinging cli"}
+{"level":"debug","ts":1660925920.3596418,"caller":"cli/cli.go:98","msg":"command: bin/cli.exe. flags: -ping"}
+{"level":"info","ts":1660925920.388057,"caller":"cli/cli.go:112","msg":"CLI ping has been successful"}
+{"level":"info","ts":1660925920.388057,"caller":"app/main.go:112","msg":"API Routes has initialized"}
+{"level":"info","ts":1660925920.388057,"caller":"app/main.go:115","msg":"Bot is listening to updates"}
+{"level":"info","ts":1660925920.388057,"caller":"app/main.go:127","msg":"API server is listening on port 9000"}
+{"level":"info","ts":1660925960.3983667,"caller":"app/main.go:131","msg":"Shutting down gracefully..."}
+{"level":"info","ts":1660925960.411011,"caller":"app/main.go:142","msg":"ok"}
