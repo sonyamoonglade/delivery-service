@@ -12,17 +12,18 @@ build-cli:
 run:
 	go run cmd/app/main.go
 
-build-delivery-local:
+build-local:
 	docker build -f ./docker/local.Dockerfile -t sonyamoonglade/sancho-hub:delivery-local . && docker push sonyamoonglade/sancho-hub:delivery-local
 
-build-delivery-prod:
-	docker build -f ./docker/prod.Dockerfile -t sonyamoonglade/sancho-hub:delivery-prod .
+build-prod:
+	docker build -f ./docker/prod.Dockerfile -t sonyamoonglade/sancho-hub:delivery-prod . && docker push sonyamoonglade/sancho-hub:delivery-prod
 
-run-delivery-local:
+run-local:
 	docker run -d -p 9000:9000 --env-file ./.env.local sonyamoonglade/sancho-hub:delivery-local
 
-run-delivery-prod:
+run-prod:
 	docker run -d -p 9000:9000 --env-file ./.env.prod sonyamoonglade/sancho-hub:delivery-prod
 
 cp-env:
-	cp .env.prod ../../sancho-console/delivery/
+	cp .env.prod ../deployment/delivery/
+

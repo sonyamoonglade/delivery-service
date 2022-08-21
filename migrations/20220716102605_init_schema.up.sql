@@ -1,5 +1,3 @@
-
-
 CREATE TYPE "pay" AS ENUM('onPickup','online');
 
 

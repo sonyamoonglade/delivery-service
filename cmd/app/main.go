@@ -39,7 +39,7 @@ func main() {
 	signal.Notify(exit, syscall.SIGTERM, os.Interrupt)
 
 	logger, err := logging.WithCfg(&logging.Config{
-		Level:    zap.NewAtomicLevelAt(zap.InfoLevel),
+		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
 		DevMode:  true,
 		Encoding: logging.JSON,
 	})
@@ -50,7 +50,6 @@ func main() {
 
 	//Load .env.local for local development
 	if err = godotenv.Load(".env.local"); err != nil {
-		logger.Errorf("Could not load environment variables. %s", err.Error())
 		logger.Infof("Ignore this message if app is ran by docker. %s", err.Error())
 	}
 

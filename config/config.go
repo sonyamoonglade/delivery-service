@@ -2,11 +2,13 @@ package config
 
 import (
 	"errors"
+	"fmt"
+	"os"
+	"strconv"
+
 	"github.com/sonyamoonglade/delivery-service/pkg/bot"
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"github.com/spf13/viper"
-	"os"
-	"strconv"
 )
 
 type App struct {
@@ -41,7 +43,6 @@ func GetAppConfig() (AppConfig, error) {
 	if ok != true {
 		return AppConfig{}, errors.New("missing botToken")
 	}
-
 	botURL, ok := os.LookupEnv(BotUrl)
 	if ok != true {
 		return AppConfig{}, errors.New("missing botURL")
@@ -155,6 +156,8 @@ func readConfig() (*viper.Viper, error) {
 	if env == "production" {
 		name = "prod.config"
 	}
+
+	fmt.Printf("reading %s\n", name)
 
 	viper.AddConfigPath(".")
 	viper.SetConfigName(name)

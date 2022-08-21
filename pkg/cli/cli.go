@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os/exec"
+	"strings"
+	"sync"
+
 	"github.com/sonyamoonglade/delivery-service/config"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"go.uber.org/zap"
 	"go.uber.org/zap/buffer"
-	"os/exec"
-	"strings"
-	"sync"
 )
 
 var TimeoutError = errors.New("operation takes too long")
@@ -33,7 +34,7 @@ func NewCli(logger *zap.SugaredLogger, config *config.App) Cli {
 	os := config.Os
 
 	if os == strings.ToLower("linux") {
-		PathToExecutable = "./bin/cli"
+		PathToExecutable = "bin/cli"
 	}
 	if os == strings.ToLower("windows") {
 		PathToExecutable = "bin/cli.exe"
