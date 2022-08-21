@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/sonyamoonglade/delivery-service/internal/entity"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
@@ -104,9 +105,16 @@ func (s *runnerStorage) Register(dto dto.RegisterRunnerDto) (int64, error) {
 	return runnerID, nil
 }
 
-func (s *runnerStorage) Ban(runnerID int64) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *runnerStorage) Ban(phoneNumber string) error {
+
+	q := fmt.Sprintf("DELETE FROM %s WHERE phone_number = $1", runnerTable)
+	_, err := s.db.Exec(q, phoneNumber)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func (s *runnerStorage) BeginWork(dto dto.RunnerBeginWorkDto) error {

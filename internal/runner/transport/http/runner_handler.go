@@ -1,6 +1,9 @@
 package httptransport
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
@@ -8,7 +11,6 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/responder"
 	"go.uber.org/zap"
-	"net/http"
 )
 
 type runnerHandler struct {
@@ -23,7 +25,7 @@ func NewRunnerHandler(logger *zap.SugaredLogger, runnerService runner.Service) r
 func (h *runnerHandler) RegisterRoutes(r *httprouter.Router) {
 
 	r.POST("/api/runner/", h.Register)
-	r.DELETE("/api/runner/ban", h.Ban)
+	r.DELETE("/api/runner/:phoneNumber", h.Ban)
 	r.GET("/api/runner/", h.All)
 }
 
@@ -39,6 +41,7 @@ func (h *runnerHandler) All(w http.ResponseWriter, req *http.Request, _ httprout
 	responder.JSON(w, 200, responder.R{
 		"runners": runners,
 	})
+	return
 }
 
 func (h *runnerHandler) Register(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
@@ -63,7 +66,30 @@ func (h *runnerHandler) Register(w http.ResponseWriter, req *http.Request, _ htt
 	return
 }
 
-func (h *runnerHandler) Ban(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	//TODO implement me
-	panic("implement me")
+func (h *runnerHandler) Ban(w http.ResponseWriter, req *http.Request, params httprouter.Params) {
+
+	phoneNumber := params.ByName("phoneNumber")
+	if phoneNumber == "" {
+		err := httpErrors.BadRequestError("missing phoneNumber")
+		code, R := httpErrors.Response(err)
+		responder.JSON(w, code, R)
+		h.logger.Debug("missing phoneNumber")
+		return
+	}
+
+	if strings.Split(phoneNumber, "")[0] != "+" {
+		phoneNumber = "+" + phoneNumber
+	}
+	err := h.runnerService.Ban(phoneNumber)
+	if err != nil {
+		code, R := httpErrors.Response(err)
+		responder.JSON(w, code, R)
+		h.logger.Error(err.Error())
+		return
+	}
+
+	w.WriteHeader(200)
+	h.logger.Debug("banned runner %d", phoneNumber)
+	return
+
 }

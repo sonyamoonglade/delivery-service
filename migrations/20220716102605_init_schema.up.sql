@@ -50,7 +50,7 @@ CREATE INDEX "runner_id_idx" ON "reserved" ("runner_id");
 
 CREATE TABLE IF NOT EXISTS "telegram_runner"(
     "runner_id" INTEGER PRIMARY KEY NOT NULL,
-    "telegram_id" INTEGER NOT NULL
+    "telegram_id" BIGINT NOT NULL
 );
 
 ALTER TABLE "telegram_runner" ADD CONSTRAINT "runner_id_fk_tg"

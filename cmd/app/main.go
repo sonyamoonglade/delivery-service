@@ -39,7 +39,7 @@ func main() {
 	signal.Notify(exit, syscall.SIGTERM, os.Interrupt)
 
 	logger, err := logging.WithCfg(&logging.Config{
-		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
+		Level:    zap.NewAtomicLevelAt(zap.InfoLevel),
 		DevMode:  true,
 		Encoding: logging.JSON,
 	})

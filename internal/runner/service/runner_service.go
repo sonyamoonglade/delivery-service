@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
 	"github.com/sonyamoonglade/delivery-service/internal/entity"
 	"github.com/sonyamoonglade/delivery-service/internal/runner"
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
@@ -98,7 +99,6 @@ func (s *runnerService) BeginWork(dto dto.RunnerBeginWorkDto) error {
 	return nil
 }
 
-func (s *runnerService) Ban(runnerID int64) error {
-	//TODO implement me
-	panic("implement me")
+func (s *runnerService) Ban(phoneNumber string) error {
+	return s.storage.Ban(phoneNumber)
 }
