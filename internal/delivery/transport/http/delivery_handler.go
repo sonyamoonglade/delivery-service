@@ -2,6 +2,9 @@ package httptransport
 
 import (
 	"context"
+	"net/http"
+	"time"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/sonyamoonglade/delivery-service/config"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
@@ -12,10 +15,8 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/formatter"
-	"github.com/sonyamoonglade/delivery-service/pkg/responder"
+	"github.com/sonyamoonglade/notification-service/pkg/httpRes"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type deliveryHandler struct {
@@ -39,7 +40,7 @@ func (h *deliveryHandler) RegisterRoutes(r *httprouter.Router) {
 
 func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
-	h.logger.Info("call check")
+	h.logger.Debug("call check")
 	hdr := w.Header()
 
 	hdr.Add("Connection", "keep-alive")
@@ -47,13 +48,11 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	doneCh := make(chan error)
+	doneErrCh := make(chan error)
 
 	var inp dto.CheckDto
 	if err := binder.Bind(r.Body, &inp); err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 
@@ -67,54 +66,48 @@ func (h *deliveryHandler) Check(w http.ResponseWriter, r *http.Request, _ httpro
 		cancel()
 	}()
 
+	//Invoke write in goroutine
 	go func() {
 		err := h.deliveryService.WriteCheck(dtoForCli)
 		if err != nil {
-			doneCh <- err
+			doneErrCh <- err
 			return
 		}
-		doneCh <- nil
+		doneErrCh <- nil
 	}()
-
+	//Block initial routine with select case
 	select {
 	case <-ctx.Done():
 		h.logger.Errorf("Failed with timeout. %s", ctx.Err())
-		code, R := httpErrors.Response(cli.TimeoutError)
-		responder.JSON(w, code, R)
+		httpErrors.ResponseAndLog(h.logger, w, cli.TimeoutError)
 		return
-	case err := <-doneCh:
+	case err := <-doneErrCh:
 		if err != nil {
-			code, R := httpErrors.Response(err)
-			h.logger.Error(err.Error())
-			responder.JSON(w, code, R)
+			httpErrors.ResponseAndLog(h.logger, w, err)
 			return
 		}
 		//If previous operations were ok, set header
 		hdr.Add("Content-Type", "octet/stream")
 
 		//Copy check file bytes to ResponseWriter
-		err = h.deliveryService.ReadFromCheck(w)
+		err = h.deliveryService.CopyFromCheck(w)
 		if err != nil {
-			code, R := httpErrors.Response(err)
-			h.logger.Error(err.Error())
-			responder.JSON(w, code, R)
+			httpErrors.ResponseAndLog(h.logger, w, err)
 			return
 		}
 
-		h.logger.Info("copy file to response writer success")
+		h.logger.Debug("copy file to response writer success")
 		return
 	}
 
 }
 
 func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
-	h.logger.Info("call create delivery")
+	h.logger.Debug("call create delivery")
 	var payload dto.CreateDelivery
 
 	if err := binder.Bind(req.Body, &payload); err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 	createDto := dto.CreateDeliveryDatabaseDto{
@@ -124,35 +117,29 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 
 	deliveryID, err := h.deliveryService.Create(createDto)
 	if err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 	h.logger.Debug("created delivery in database")
-	//todo: mv template to templates, func to bot pkg
+
 	telegramMsg := h.extractFmt.FormatTemplate(&payload, config.TempOffset)
 	h.logger.Debug("formatted telegram template")
 
+	//Bot produced an error while sending a message
 	err = h.bot.PostDeliveryMessage(telegramMsg, deliveryID)
 	if err != nil {
-
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
 		//Delete delivery in database because telegram service could not send a message
 		err = h.deliveryService.Delete(deliveryID)
 		if err != nil {
-			code, R = httpErrors.Response(err)
-			responder.JSON(w, code, R)
-			h.logger.Error(err.Error())
+			httpErrors.ResponseAndLog(h.logger, w, err)
 			return
 		}
+
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 	h.logger.Debug("successfully sent telegram msg")
-	w.WriteHeader(201)
-	return
+	httpRes.Created(w)
 }
 
 func (h *deliveryHandler) Status(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -160,22 +147,18 @@ func (h *deliveryHandler) Status(w http.ResponseWriter, r *http.Request, _ httpr
 	var inp dto.StatusOfDeliveryDto
 
 	if err := binder.Bind(r.Body, &inp); err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 
 	statuses, err := h.deliveryService.Status(inp)
 	if err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
-	responder.JSON(w, http.StatusOK, responder.R{
+	httpRes.Json(h.logger, w, http.StatusOK, httpRes.JSON{
 		"result": statuses,
 	})
-	h.logger.Info("sent")
+	h.logger.Debug("sent")
 	return
 }

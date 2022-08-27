@@ -9,7 +9,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
-	"github.com/sonyamoonglade/delivery-service/pkg/responder"
+	"github.com/sonyamoonglade/notification-service/pkg/httpRes"
 	"go.uber.org/zap"
 )
 
@@ -32,13 +32,11 @@ func (h *runnerHandler) RegisterRoutes(r *httprouter.Router) {
 func (h *runnerHandler) All(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	runners, err := h.runnerService.All(req.Context())
 	if err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 
-	responder.JSON(w, 200, responder.R{
+	httpRes.Json(h.logger, w, http.StatusOK, httpRes.JSON{
 		"runners": runners,
 	})
 	return
@@ -48,21 +46,17 @@ func (h *runnerHandler) Register(w http.ResponseWriter, req *http.Request, _ htt
 	var inp dto.RegisterRunnerDto
 	err := binder.Bind(req.Body, &inp)
 	if err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 
 	err = h.runnerService.Register(inp)
 	if err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 
-	w.WriteHeader(201)
+	httpRes.Created(w)
 	return
 }
 
@@ -71,8 +65,7 @@ func (h *runnerHandler) Ban(w http.ResponseWriter, req *http.Request, params htt
 	phoneNumber := params.ByName("phoneNumber")
 	if phoneNumber == "" {
 		err := httpErrors.BadRequestError("missing phoneNumber")
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		h.logger.Debug("missing phoneNumber")
 		return
 	}
@@ -82,14 +75,11 @@ func (h *runnerHandler) Ban(w http.ResponseWriter, req *http.Request, params htt
 	}
 	err := h.runnerService.Ban(phoneNumber)
 	if err != nil {
-		code, R := httpErrors.Response(err)
-		responder.JSON(w, code, R)
-		h.logger.Error(err.Error())
+		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
 
-	w.WriteHeader(200)
 	h.logger.Debug("banned runner %d", phoneNumber)
+	httpRes.Ok(w)
 	return
-
 }

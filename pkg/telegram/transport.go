@@ -2,6 +2,10 @@ package telegram
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/pkg/errors"
 	"github.com/sonyamoonglade/delivery-service/config"
@@ -17,9 +21,6 @@ import (
 	tgDto "github.com/sonyamoonglade/delivery-service/pkg/telegram/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
-	"reflect"
-	"strings"
-	"time"
 )
 
 type Transport interface {
@@ -159,7 +160,7 @@ func (h *telegramTransport) HandleCallback(cb *tg.CallbackQuery) {
 		var inp callback.Data
 
 		if err := callback.Decode(callbackData, &inp); err != nil {
-			h.ResponseWithError(err, grpChatID)
+			h.ResponseWithError(err, usrID)
 			h.AnswerCallback(callbackID)
 			return
 		}
@@ -167,13 +168,13 @@ func (h *telegramTransport) HandleCallback(cb *tg.CallbackQuery) {
 		//Complete the delivery
 		ok, err := h.deliveryService.Complete(inp.DeliveryID)
 		if err != nil {
-			h.ResponseWithError(err, grpChatID)
+			h.ResponseWithError(err, usrID)
 			h.AnswerCallback(callbackID)
 			return
 		}
 		//Delivery could not be completed
 		if ok == false {
-			h.ResponseWithError(err, grpChatID)
+			h.ResponseWithError(err, usrID)
 			h.AnswerCallback(callbackID)
 			return
 		}
@@ -187,7 +188,7 @@ func (h *telegramTransport) HandleCallback(cb *tg.CallbackQuery) {
 			TotalCartPrice: txtData.TotalCartPrice,
 		}
 
-		//Edit after-reserve delivery text for short and informative after-complete message
+		//Edit after-reserve delivery text for short and informative after-complete message (happens in user's pm)
 		aftCompleteMsg := tg.NewEditMessageText(usrID, msgID, h.extractFmt.AfterCompleteReply(data))
 		h.Send(aftCompleteMsg)
 		h.logger.Debugf("Sent after-complete message to %d", usrID)
@@ -196,7 +197,7 @@ func (h *telegramTransport) HandleCallback(cb *tg.CallbackQuery) {
 		h.logger.Debugf("Answered callback %s successfully", callbackID)
 		return
 	}
-	//todo:update message with check mark, send delivery to pm by usrID
+
 }
 
 func (h *telegramTransport) HandleMessage(m *tg.Message) {

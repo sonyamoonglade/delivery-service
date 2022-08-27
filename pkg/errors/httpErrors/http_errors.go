@@ -2,10 +2,12 @@ package httpErrors
 
 import (
 	"errors"
-	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
-	"github.com/sonyamoonglade/delivery-service/pkg/responder"
 	"net/http"
 	"strings"
+
+	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
+	"github.com/sonyamoonglade/notification-service/pkg/httpRes"
+	"go.uber.org/zap"
 )
 
 const (
@@ -101,21 +103,25 @@ func parseError(e error) HttpError {
 
 }
 
-func baseErrResponse(m string, code int) responder.R {
-	return responder.R{
+func baseErrResponse(m string, code int) httpRes.JSON {
+	return httpRes.JSON{
 		"message":    m,
 		"statusCode": code,
 	}
 }
 
-func Response(e error) (int, responder.R) {
+func ResponseAndLog(logger *zap.SugaredLogger, w http.ResponseWriter, e error) {
+
 	var httpErr HttpError
+
 	if errors.As(e, &httpErr) {
-		return httpErr.code, baseErrResponse(httpErr.Error(), httpErr.Code())
+		data := baseErrResponse(httpErr.Error(), httpErr.Code())
+		httpRes.Json(logger, w, httpErr.Code(), data)
+		return
 	}
 
-	parErr := parseError(e)
-
-	return parErr.code, baseErrResponse(parErr.Error(), parErr.Code())
-
+	parsedErr := parseError(e)
+	data := baseErrResponse(parsedErr.Error(), parsedErr.Code())
+	httpRes.Json(logger, w, parsedErr.Code(), data)
+	return
 }

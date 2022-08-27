@@ -1,10 +1,11 @@
 package delivery
 
 import (
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
-	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"net/http"
 	"time"
+
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
+	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 )
 
 type Service interface {
@@ -14,5 +15,5 @@ type Service interface {
 	Delete(deliveryID int64) error
 	Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.DeliveryStatus, error)
 	WriteCheck(dto dto.CheckDtoForCli) error
-	ReadFromCheck(w http.ResponseWriter) error
+	CopyFromCheck(w http.ResponseWriter) error
 }

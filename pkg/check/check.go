@@ -4,10 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
-	"github.com/sonyamoonglade/delivery-service/pkg/helpers"
-	"github.com/unidoc/unioffice/common/license"
-	"github.com/unidoc/unioffice/document"
 	"io"
 	"net/http"
 	"os"
@@ -15,6 +11,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
+	"github.com/sonyamoonglade/delivery-service/pkg/helpers"
+	"github.com/unidoc/unioffice/common/license"
+	"github.com/unidoc/unioffice/document"
 )
 
 var FileDoesNotExist = errors.New("file does not exist")
@@ -265,6 +266,7 @@ func (c *checkService) RestoreKey() error {
 	if err != nil {
 		return err
 	}
+
 	//Make a buff
 	buff := bytes.NewBufferString(strings.Join(keys, "\n"))
 

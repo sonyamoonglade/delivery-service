@@ -1,8 +1,9 @@
 package runner
 
 import (
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type Transport interface {

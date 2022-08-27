@@ -1,8 +1,10 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
+	"net/http"
+	"time"
+
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
@@ -11,8 +13,6 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type deliveryService struct {
@@ -26,7 +26,7 @@ func NewDeliveryService(logger *zap.SugaredLogger, storage delivery.Storage, cli
 	return &deliveryService{logger: logger, storage: storage, cli: cli, checkService: check}
 }
 
-func (s *deliveryService) ReadFromCheck(w http.ResponseWriter) error {
+func (s *deliveryService) CopyFromCheck(w http.ResponseWriter) error {
 	return s.checkService.Copy(w)
 }
 
@@ -42,7 +42,6 @@ func (s *deliveryService) WriteCheck(dto dto.CheckDtoForCli) error {
 				//Refresh key here
 				if err := s.checkService.RestoreKey(); err != nil {
 					//Some internal error
-
 					return cli.TimeoutError
 				}
 				//Restore is successful
@@ -50,7 +49,6 @@ func (s *deliveryService) WriteCheck(dto dto.CheckDtoForCli) error {
 				continue
 			}
 			if errors.Is(err, cli.TimeoutError) {
-
 				return cli.TimeoutError
 			}
 
@@ -61,8 +59,8 @@ func (s *deliveryService) WriteCheck(dto dto.CheckDtoForCli) error {
 		//Break if it wrote check at 1st attempt
 		break
 	}
-	return nil
 
+	return nil
 }
 
 func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.DeliveryStatus, error) {
@@ -83,6 +81,7 @@ func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.Deli
 			Status:  v,
 		}
 		statuses = append(statuses, status)
+		_ = status
 	}
 
 	return statuses, nil
@@ -90,15 +89,16 @@ func (s *deliveryService) Status(dto dto.StatusOfDeliveryDto) ([]tgdelivery.Deli
 
 func (s *deliveryService) Complete(deliveryID int64) (bool, error) {
 
-	err := s.storage.Complete(deliveryID)
+	ok, err := s.storage.Complete(deliveryID)
 	if err != nil {
 		s.logger.Error(err.Error())
-
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, tgErrors.DeliveryCouldNotBeCompleted(deliveryID)
-		}
 		return false, err
 	}
+
+	if ok == false {
+		return false, tgErrors.DeliveryCouldNotBeCompleted(deliveryID)
+	}
+
 	return true, nil
 }
 

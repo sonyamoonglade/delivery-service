@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
-	"time"
 )
 
 type deliveryStorage struct {
@@ -47,22 +48,23 @@ func (s *deliveryStorage) Status(ids []int64) ([]bool, error) {
 	return statuses, nil
 }
 
-func (s *deliveryStorage) Complete(deliveryID int64) error {
+func (s *deliveryStorage) Complete(deliveryID int64) (bool, error) {
 
 	q := fmt.Sprintf("UPDATE %s SET is_completed = true WHERE delivery_id = $1 AND is_completed = false", deliveryTable)
 
 	r, err := s.db.Exec(q, deliveryID)
 	if err != nil {
-		return err
-	}
-	if n, err := r.RowsAffected(); err != nil {
-		if n == 0 {
-			return sql.ErrNoRows
-		}
-		return err
+		return false, err
 	}
 
-	return nil
+	if n, err := r.RowsAffected(); err != nil {
+		if n == 0 {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 
 }
 

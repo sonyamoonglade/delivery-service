@@ -2,11 +2,12 @@ package bot
 
 import (
 	"encoding/json"
+	"strings"
+
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sonyamoonglade/delivery-service/pkg/callback"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
-	"strings"
 )
 
 type Config struct {
@@ -72,7 +73,6 @@ func (t *bot) PostDeliveryMessage(text string, deliveryID int64) error {
 
 	_, err := t.telegramClient.Send(msg)
 	if err != nil {
-		t.logger.Error(err.Error())
 		return err
 	}
 
