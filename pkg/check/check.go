@@ -23,10 +23,19 @@ var ApiKeyHasExpired = errors.New("api key has expired")
 var NoApiKeysLeft = errors.New("no api keys left")
 
 const (
-	pathToKeys        = "check/keys.txt"
-	pathToCheck       = "check/check.docx"
 	CheckWriteTimeout = time.Millisecond * 5000
+	keysFilename      = "keys.txt"
+	checkFilename     = "check.docx"
 )
+
+var pathToKeys string
+var pathToCheck string
+
+//initPaths is made for testing purposes
+func initPaths(path string) {
+	pathToKeys = path + keysFilename
+	pathToCheck = path + checkFilename
+}
 
 type Service interface {
 	Format(doc *document.Document, dto dto.CheckDto)
@@ -41,7 +50,8 @@ type checkService struct {
 	mut sync.Mutex
 }
 
-func NewCheckService() Service {
+func NewCheckService(path string) Service {
+	initPaths(path)
 	return &checkService{mut: sync.Mutex{}}
 }
 

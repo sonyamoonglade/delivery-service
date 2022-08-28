@@ -42,7 +42,8 @@ func (s *deliveryService) WriteCheck(dto dto.CheckDtoForCli) error {
 				//Refresh key here
 				if err := s.checkService.RestoreKey(); err != nil {
 					//Some internal error
-					return cli.TimeoutError
+					s.logger.Error(err.Error())
+					return httpErrors.InternalError()
 				}
 				//Restore is successful
 				s.logger.Debug("restored key successfully")

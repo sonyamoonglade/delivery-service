@@ -12,8 +12,8 @@ import (
 )
 
 type App struct {
-	Port string
-	Os   string
+	Port      string
+	CheckPath string
 }
 
 type AppConfig struct {
@@ -126,14 +126,14 @@ func GetAppConfig() (AppConfig, error) {
 	}
 	TempOffset = offsetLikeInt
 
-	opSys, ok := os.LookupEnv("GOOS")
-	if ok != true {
-		return AppConfig{}, errors.New("missing GOOS")
+	checkPath := v.GetString("check.path")
+	if checkPath == "" {
+		return AppConfig{}, errors.New("missing check.path")
 	}
 
 	appCfg := &App{
-		Port: appPort,
-		Os:   opSys,
+		Port:      appPort,
+		CheckPath: checkPath,
 	}
 
 	return AppConfig{

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 
-	"github.com/sonyamoonglade/delivery-service/config"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"go.uber.org/zap"
@@ -30,13 +30,13 @@ type cli struct {
 	mut    sync.Mutex
 }
 
-func NewCli(logger *zap.SugaredLogger, config *config.App) Cli {
-	os := config.Os
+func NewCli(logger *zap.SugaredLogger) Cli {
+	os := runtime.GOOS
 
-	if os == strings.ToLower("linux") {
+	if strings.ToLower(os) == "linux" {
 		PathToExecutable = "bin/cli"
 	}
-	if os == strings.ToLower("windows") {
+	if strings.ToLower(os) == "windows" {
 		PathToExecutable = "bin/cli.exe"
 	}
 

@@ -6,7 +6,5 @@ db:
   database: "fjausfhw"
   host: "abul.db.elephantsql.com"
   port: "5432"
-
-
-
-
+check:
+  path: "check"

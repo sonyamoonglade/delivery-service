@@ -9,6 +9,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
+	"github.com/sonyamoonglade/delivery-service/pkg/validation"
 	"github.com/sonyamoonglade/notification-service/pkg/httpRes"
 	"go.uber.org/zap"
 )
@@ -43,9 +44,23 @@ func (h *runnerHandler) All(w http.ResponseWriter, req *http.Request, _ httprout
 }
 
 func (h *runnerHandler) Register(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+
 	var inp dto.RegisterRunnerDto
+
 	err := binder.Bind(req.Body, &inp)
 	if err != nil {
+		httpErrors.ResponseAndLog(h.logger, w, err)
+		return
+	}
+
+	//Validate
+	if ok := validation.ValidateUsername(inp.Username); ok == false {
+		err = httpErrors.BadRequestError(httpErrors.InvalidUsername)
+		httpErrors.ResponseAndLog(h.logger, w, err)
+		return
+	}
+	if ok := validation.ValidatePhoneNumber(inp.PhoneNumber); ok == false {
+		err = httpErrors.BadRequestError(httpErrors.InvalidPhoneNumber)
 		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}

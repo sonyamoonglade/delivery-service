@@ -56,7 +56,9 @@ func (s *runnerStorage) GetByTelegramId(tgUsrID int64) (*entity.Runner, error) {
 	row := s.db.QueryRowx(q, tgUsrID)
 
 	if err := row.StructScan(&r); err != nil {
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 	}
 	return &r, nil
 
@@ -68,6 +70,9 @@ func (s *runnerStorage) IsKnownByTelegramId(tgUsrID int64) (bool, error) {
 	row := s.db.QueryRowx(q, tgUsrID)
 	var ok bool
 	if err := row.Scan(&ok); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
 		return false, err
 	}
 	return ok, nil
@@ -81,6 +86,9 @@ func (s *runnerStorage) IsRunner(usrPhoneNumber string) (int64, error) {
 	var runnerID int64
 
 	if err := row.Scan(&runnerID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, nil
+		}
 		return 0, err
 	}
 

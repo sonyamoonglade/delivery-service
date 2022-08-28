@@ -81,7 +81,7 @@ func main() {
 	}
 	logger.Info("Bot has initialized")
 
-	cliClient := cli.NewCli(logger, appCfg.App)
+	cliClient := cli.NewCli(logger)
 
 	if err := cliClient.Ping(); err != nil {
 		logger.Fatalf(err.Error())
@@ -94,7 +94,7 @@ func main() {
 	deliveryStorage := dlvStorage.NewDeliveryStorage(db)
 
 	//Initialize service
-	checkService := check.NewCheckService()
+	checkService := check.NewCheckService(appCfg.App.CheckPath)
 	deliveryService := dlvService.NewDeliveryService(logger, deliveryStorage, cliClient, checkService)
 	runnerService := runnService.NewRunnerService(logger, runnerStorage)
 
