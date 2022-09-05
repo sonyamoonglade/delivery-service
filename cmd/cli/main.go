@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"log"
+	"os"
+
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"github.com/sonyamoonglade/delivery-service/pkg/logging"
 	"go.uber.org/zap"
-	"log"
-	"os"
 )
 
 const keysPath = "check/keys.txt"
@@ -19,7 +20,8 @@ func main() {
 
 	var cliDto dto.CheckDtoForCli
 
-	checkService := check.NewCheckService()
+	path := "check" // Transformed into check/somefile.ext
+	checkService := check.NewCheckService(path)
 
 	log.Println("booting check-formatter app")
 

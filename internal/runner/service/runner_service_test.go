@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//todo: move ctrl to tests..
 func initDeps(t *testing.T) *mock_runner.MockStorage {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

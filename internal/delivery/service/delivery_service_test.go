@@ -397,8 +397,8 @@ func TestWriteCheckOK(t *testing.T) {
 					DeliveredAt:    time.Now(),
 					Comment:        "test comment",
 				},
-				TotalCartPrice: 25,
-				Pay:            "onPickup",
+				Amount: 25,
+				Pay:    "onPickup",
 				Cart: []tgdelivery.CartProduct{
 					{
 						ProductID: 1,
@@ -448,8 +448,8 @@ func TestWriteCheckRestoreKey(t *testing.T) {
 					DeliveredAt:    time.Now(),
 					Comment:        "test comment",
 				},
-				TotalCartPrice: 25,
-				Pay:            "onPickup",
+				Amount: 25,
+				Pay:    "onPickup",
 				Cart: []tgdelivery.CartProduct{
 					{
 						ProductID: 1,
@@ -515,8 +515,8 @@ func TestWriteCheckNoApiKeysLeft(t *testing.T) {
 					DeliveredAt:    time.Now(),
 					Comment:        "test comment",
 				},
-				TotalCartPrice: 25,
-				Pay:            "onPickup",
+				Amount: 25,
+				Pay:    "onPickup",
 				Cart: []tgdelivery.CartProduct{
 					{
 						ProductID: 1,
@@ -567,8 +567,8 @@ func TestWriteCheckTimeoutErr(t *testing.T) {
 					DeliveredAt:    time.Now(),
 					Comment:        "test comment",
 				},
-				TotalCartPrice: 25,
-				Pay:            "onPickup",
+				Amount: 25,
+				Pay:    "onPickup",
 				Cart: []tgdelivery.CartProduct{
 					{
 						ProductID: 1,
@@ -619,8 +619,8 @@ func TestWriteCheckInternalErrRestoringKey(t *testing.T) {
 					DeliveredAt:    time.Now(),
 					Comment:        "test comment",
 				},
-				TotalCartPrice: 25,
-				Pay:            "onPickup",
+				Amount: 25,
+				Pay:    "onPickup",
 				Cart: []tgdelivery.CartProduct{
 					{
 						ProductID: 1,

@@ -5,7 +5,7 @@ import "time"
 type Order struct {
 	OrderID         int64            `json:"order_id,omitempty" validate:"required"`
 	DeliveryDetails *DeliveryDetails `json:"delivery_details" validate:"required"`
-	TotalCartPrice  int64            `json:"total_cart_price" validate:"required"`
+	Amount          int64            `json:"Amount" validate:"required"`
 	Pay             Pay              `json:"pay" validate:"required"`
 	IsDeliveredAsap bool             `json:"is_delivered_asap"`
 }
@@ -45,7 +45,7 @@ type CartProduct struct {
 type OrderForCheck struct {
 	OrderID         int64           `json:"order_id" validate:"required"`
 	DeliveryDetails DeliveryDetails `json:"delivery_details,omitempty"`
-	TotalCartPrice  int64           `json:"total_cart_price" validate:"required"`
+	Amount          int64           `json:"amount" validate:"required"`
 	Pay             Pay             `json:"pay" validate:"required"`
 	Cart            []CartProduct   `json:"cart" validate:"required"`
 	IsDelivered     bool            `json:"is_delivered"`

@@ -2,20 +2,21 @@ package formatter
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/helpers"
 	botDto "github.com/sonyamoonglade/delivery-service/pkg/telegram/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/templates"
 	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 type ExtractableMessageData struct {
-	OrderID        int64
-	TotalCartPrice int64
-	Username       string
+	OrderID  int64
+	Amount   int64
+	Username string
 }
 
 type ExtractFormatter interface {
@@ -65,7 +66,7 @@ func (f *formatter) FormatTemplate(dto *dto.CreateDelivery, offset int64) string
 	}
 
 	template = strings.Replace(template, "orderId", idLikeSix, -1)
-	template = strings.Replace(template, "sum", fmt.Sprintf("%d", dto.Order.TotalCartPrice), -1)
+	template = strings.Replace(template, "sum", fmt.Sprintf("%d", dto.Order.Amount), -1)
 	template = strings.Replace(template, "pay", payTranslate, -1)
 	template = strings.Replace(template, "username", dto.User.Username, -1)
 	template = strings.Replace(template, "phoneNumber", dto.User.PhoneNumber, -1)
@@ -101,9 +102,9 @@ func (f *formatter) ExtractDataFromText(text string) ExtractableMessageData {
 	userLine := splByNewLine[5]
 
 	data := ExtractableMessageData{
-		OrderID:        helpers.ExtractOrderId(ordLine),
-		TotalCartPrice: helpers.ExtractTotalPrice(totalPriceLine),
-		Username:       helpers.ExtractUsername(userLine),
+		OrderID:  helpers.ExtractOrderId(ordLine),
+		Amount:   helpers.ExtractAmount(totalPriceLine),
+		Username: helpers.ExtractUsername(userLine),
 	}
 
 	return data
@@ -124,7 +125,7 @@ func (f *formatter) GroupAfterReserveReply(dto botDto.GroupReserveReplyDto, offs
 		dto.RunnerUsername,
 		dto.OrderID,
 		dto.Username,
-		dto.TotalCartPrice)
+		dto.Amount)
 }
 func (f *formatter) AfterCompleteReply(dto botDto.PersonalCompleteReplyDto) string {
 	return fmt.Sprintf(templates.DeliveryCompletedText,
@@ -132,7 +133,7 @@ func (f *formatter) AfterCompleteReply(dto botDto.PersonalCompleteReplyDto) stri
 		templates.Success,
 		dto.OrderID,
 		dto.Username,
-		dto.TotalCartPrice)
+		dto.Amount)
 }
 
 func (f *formatter) fmtTime(t time.Time, offset int64) string {

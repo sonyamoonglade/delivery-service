@@ -1,8 +1,9 @@
 package helpers
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type TestId struct {
@@ -15,7 +16,7 @@ type TestOrderId struct {
 	expected int64
 }
 
-type TestTotalPrice struct {
+type TestAmount struct {
 	text     string
 	expected int64
 }
@@ -58,9 +59,9 @@ func TestExtractOrderId(test *testing.T) {
 	}
 }
 
-func TestExtractTotalPrice(test *testing.T) {
+func TestExtractAmount(test *testing.T) {
 
-	tt := []TestTotalPrice{
+	tt := []TestAmount{
 		{text: "Сумма | 981.0 ₽", expected: 981},
 		{text: "Сумма | 1005123.0 ₽", expected: 1005123},
 		{text: "Сумма | 1.0 ₽", expected: 1},
@@ -70,7 +71,7 @@ func TestExtractTotalPrice(test *testing.T) {
 	}
 
 	for _, t := range tt {
-		actual := ExtractTotalPrice(t.text)
+		actual := ExtractAmount(t.text)
 		assert.Equal(test, t.expected, actual)
 	}
 }
