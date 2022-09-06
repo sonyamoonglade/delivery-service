@@ -53,8 +53,8 @@ func TestBindErr(t *testing.T) {
 	require.NotNil(t, err)
 
 	text := err.Error()
-
-	c0 := strings.Contains(text, "binding error")
+	t.Log(text)
+	c0 := strings.Contains(text, "validation error")
 	c1 := strings.Contains(text, "Field validation for 'Age'")
 	c2 := strings.Contains(text, "'required' tag")
 

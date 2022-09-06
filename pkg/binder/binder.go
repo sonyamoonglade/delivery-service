@@ -12,7 +12,7 @@ import (
 )
 
 func wrapError(msg string) error {
-	return fmt.Errorf("binding error: %s", msg)
+	return fmt.Errorf("validation error: %s", msg)
 }
 
 var v *validator.Validate
@@ -46,7 +46,7 @@ func Bind(r io.Reader, out interface{}) error {
 
 	err = v.Struct(ptr)
 	if err != nil {
-		msg := "Validation error."
+		msg := ""
 
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 			return wrapError(msg)
@@ -55,7 +55,7 @@ func Bind(r io.Reader, out interface{}) error {
 		for _, err := range err.(validator.ValidationErrors) {
 			errMsg := err.Error()
 			spl := strings.Split(errMsg, "Error:")
-			msg += " " + spl[1]
+			msg += spl[1]
 			return wrapError(msg)
 		}
 	}
