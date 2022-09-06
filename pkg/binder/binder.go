@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 )
 
 func wrapError(msg string) error {
@@ -39,7 +38,7 @@ func Bind(r io.Reader, out interface{}) error {
 	typ := reflect.TypeOf(out)
 	typDest := reflect.New(typ).Interface()
 	if err = json.Unmarshal(bytes, &typDest); err != nil {
-		return httpErrors.BadRequestError(httpErrors.BadRequest)
+		return err
 	}
 	//Local reflect.Value
 	localV := reflect.Indirect(reflect.ValueOf(typDest).Elem())
