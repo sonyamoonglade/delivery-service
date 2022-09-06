@@ -1,9 +1,10 @@
 package helpers
 
 import (
-	tgdelivery "github.com/sonyamoonglade/delivery-service"
 	"strconv"
 	"strings"
+
+	tgdelivery "github.com/sonyamoonglade/delivery-service"
 )
 
 func SixifyOrderId(id int64) string {
@@ -43,7 +44,7 @@ func ExtractOrderId(text string) int64 {
 	return numId
 }
 
-func ExtractTotalPrice(text string) int64 {
+func ExtractAmount(text string) int64 {
 	arr := strings.Split(text, "")
 	sumStr := ""
 	for _, ch := range arr {
@@ -59,7 +60,7 @@ func ExtractTotalPrice(text string) int64 {
 	return sum
 }
 
-func CalculateTotalProductPrice(cart []tgdelivery.CartProduct) int64 {
+func CalculateTotalAmount(cart []tgdelivery.CartProduct) int64 {
 	var sum int64 = 0
 	for _, p := range cart {
 		sum += int64(p.Quantity) * p.Price

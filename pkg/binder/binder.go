@@ -2,7 +2,7 @@ package binder
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -12,15 +12,8 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 )
 
-type BindingError struct {
-	Message string
-	Err     error
-}
-
-var bindingError = errors.New("binding error")
-
-func (e BindingError) Error() string {
-	return e.Message
+func wrapError(msg string) error {
+	return fmt.Errorf("binding error: %s", msg)
 }
 
 var v *validator.Validate
@@ -57,21 +50,14 @@ func Bind(r io.Reader, out interface{}) error {
 		msg := "Validation error."
 
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			return &BindingError{
-				Message: msg,
-				Err:     bindingError,
-			}
+			return wrapError(msg)
 		}
 
-		//todo: snake-case converter
 		for _, err := range err.(validator.ValidationErrors) {
 			errMsg := err.Error()
 			spl := strings.Split(errMsg, "Error:")
 			msg += " " + spl[1]
-			return &BindingError{
-				Message: msg,
-				Err:     bindingError,
-			}
+			return wrapError(msg)
 		}
 	}
 

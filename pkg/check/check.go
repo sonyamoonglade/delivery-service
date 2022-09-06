@@ -33,8 +33,8 @@ var pathToCheck string
 
 //initPaths is made for testing purposes
 func initPaths(path string) {
-	pathToKeys = path + keysFilename
-	pathToCheck = path + checkFilename
+	pathToKeys = path + "/" + keysFilename
+	pathToCheck = path + "/" + checkFilename
 }
 
 type Service interface {
@@ -85,7 +85,7 @@ func (c *checkService) Format(doc *document.Document, dto dto.CheckDto) {
 				switch r.Text() {
 				case "sum":
 					r.ClearContent()
-					strSum := strconv.Itoa(int(dto.Order.TotalCartPrice))
+					strSum := strconv.Itoa(int(dto.Order.Amount))
 					text := fmt.Sprintf("%s.0₽", strSum)
 					r.AddText(text)
 				case "punish":
@@ -98,11 +98,11 @@ func (c *checkService) Format(doc *document.Document, dto dto.CheckDto) {
 					var punishmentv int64 = 0
 
 					//Compare total price for isPunished or not
-					actualSum := helpers.CalculateTotalProductPrice(dto.Order.Cart)
+					actualSum := helpers.CalculateTotalAmount(dto.Order.Cart)
 
 					//Order is punished for delivery
-					if actualSum < dto.Order.TotalCartPrice {
-						punishmentv = dto.Order.TotalCartPrice - actualSum
+					if actualSum < dto.Order.Amount {
+						punishmentv = dto.Order.Amount - actualSum
 					}
 					//Fill punishment text
 					r.ClearContent()
@@ -213,6 +213,7 @@ func (c *checkService) SetLicense(key string) error {
 
 }
 func (c *checkService) GetFirstKey() (string, error) {
+
 	c.mut.Lock()
 	defer c.mut.Unlock()
 	//Open keys file
@@ -231,7 +232,7 @@ func (c *checkService) GetFirstKey() (string, error) {
 	//Get content
 	content := string(byt)
 	//Split by new-line, get first key
-	keys := strings.Split(content, "\r")
+	keys := strings.Split(content, "\r\n")
 	if len(keys) == 1 && keys[0] == "" {
 		return "", NoApiKeysLeft
 	}
@@ -241,18 +242,20 @@ func (c *checkService) GetFirstKey() (string, error) {
 func (c *checkService) RestoreKey() error {
 	c.mut.Lock()
 	defer c.mut.Unlock()
-	//Open keys file to read content
+
 	file, err := os.Open(pathToKeys)
 	if err != nil {
 		return err
 	}
-	//Read keys
-	byt, err := io.ReadAll(file)
+
+	content, err := io.ReadAll(file)
 	if err != nil {
 		return err
 	}
 
-	keys := strings.Split(string(byt), "\n")
+	file.Close()
+
+	keys := strings.Split(string(content), "\r\n")
 
 	//Check if 0 keys left
 	if len(keys) == 1 && keys[0] == "" {
@@ -262,43 +265,47 @@ func (c *checkService) RestoreKey() error {
 	//Remove dead key
 	keys = keys[1:]
 
-	//Close the file
-	file.Close()
-
 	//Open file again with trunc and write permissions
 	file, err = os.OpenFile(pathToKeys, os.O_TRUNC|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
-	//Remove file content
+	//Clear file content
 	err = file.Truncate(0)
 	if err != nil {
 		return err
 	}
 
-	//Make a buff
-	buff := bytes.NewBufferString(strings.Join(keys, "\n"))
+	buff := bytes.NewBufferString(strings.Join(keys, "\r\n"))
 
 	//Write alive keys back
 	_, err = file.Write(buff.Bytes())
+	if err != nil {
+		return err
+	}
 
-	defer file.Close()
-	return err
+	return nil
 }
-
 func (c *checkService) Copy(w http.ResponseWriter) error {
 	c.mut.Lock()
 	defer c.mut.Unlock()
-	file, err := os.Open(pathToCheck)
-	stat, _ := file.Stat()
 
-	w.Header().Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
+	file, err := os.Open(pathToCheck)
+	defer file.Close()
 
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	w.Header().Add("Content-Length", fmt.Sprintf("%d", stat.Size()))
+	w.WriteHeader(http.StatusOK)
 
 	if _, err = io.Copy(w, file); err != nil {
 		return err

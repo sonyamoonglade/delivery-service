@@ -11,14 +11,14 @@ type GroupReserveReplyDto struct {
 	DeliveryID     int64
 	OrderID        string
 	Username       string
-	TotalCartPrice int64
+	Amount         int64
 	ReservedAt     time.Time
 	RunnerUsername string
 }
 
 type PersonalCompleteReplyDto struct {
-	DeliveryID     int64
-	OrderID        string
-	Username       string
-	TotalCartPrice int64
+	DeliveryID int64
+	OrderID    string
+	Username   string
+	Amount     int64
 }

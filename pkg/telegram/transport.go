@@ -144,7 +144,7 @@ func (h *telegramTransport) HandleCallback(cb *tg.CallbackQuery) {
 			ReservedAt:     reservedAt,
 			OrderID:        helpers.SixifyOrderId(txtData.OrderID),
 			Username:       txtData.Username,
-			TotalCartPrice: txtData.TotalCartPrice,
+			Amount:         txtData.Amount,
 			RunnerUsername: rn.Username,
 		}
 		//Sent short and informative message to delivery group
@@ -182,10 +182,10 @@ func (h *telegramTransport) HandleCallback(cb *tg.CallbackQuery) {
 		h.logger.Debugf("Completed delivery %d", inp.DeliveryID)
 
 		data := tgDto.PersonalCompleteReplyDto{
-			DeliveryID:     inp.DeliveryID,
-			OrderID:        helpers.SixifyOrderId(txtData.OrderID),
-			Username:       txtData.Username,
-			TotalCartPrice: txtData.TotalCartPrice,
+			DeliveryID: inp.DeliveryID,
+			OrderID:    helpers.SixifyOrderId(txtData.OrderID),
+			Username:   txtData.Username,
+			Amount:     txtData.Amount,
 		}
 
 		//Edit after-reserve delivery text for short and informative after-complete message (happens in user's pm)
