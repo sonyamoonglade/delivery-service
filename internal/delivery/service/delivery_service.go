@@ -107,7 +107,7 @@ func (s *deliveryService) Create(dto dto.CreateDeliveryDatabaseDto) (int64, erro
 
 	deliveryID, err := s.storage.Create(dto)
 
-	// Delivery already exists
+	// Delivery already exists.
 	if err != nil {
 		s.logger.Error(err.Error())
 		return 0, httpErrors.InternalError()
@@ -116,6 +116,7 @@ func (s *deliveryService) Create(dto dto.CreateDeliveryDatabaseDto) (int64, erro
 	if deliveryID == 0 {
 		return 0, httpErrors.ConflictError(httpErrors.DeliveryAlreadyExists)
 	}
+
 	return deliveryID, nil
 }
 

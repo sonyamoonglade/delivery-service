@@ -9,8 +9,7 @@ import (
 
 	"github.com/sonyamoonglade/delivery-service/internal/delivery/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/check"
-	"github.com/sonyamoonglade/delivery-service/pkg/logging"
-	"go.uber.org/zap"
+	"github.com/sonyamoonglade/notification-service/pkg/logging"
 )
 
 const keysPath = "check/keys.txt"
@@ -20,14 +19,15 @@ func main() {
 
 	var cliDto dto.CheckDtoForCli
 
-	path := "check" // Transformed into check/somefile.ext
+	path := "check" // Transformed into check/file.ext
 	checkService := check.NewCheckService(path)
 
 	log.Println("booting check-formatter app")
 
-	logger, err := logging.WithCfg(&logging.Config{
-		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
-		DevMode:  false,
+	logger, err := logging.WithConfig(&logging.Config{
+		Strict:   false, //hardcode
+		Debug:    true,  //hardcode
+		LogsPath: "",    //hardcode
 		Encoding: logging.JSON,
 	})
 	if err != nil {

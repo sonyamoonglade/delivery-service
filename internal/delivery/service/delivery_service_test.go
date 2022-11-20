@@ -15,8 +15,8 @@ import (
 	mock_cli "github.com/sonyamoonglade/delivery-service/pkg/cli/mocks"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
-	"github.com/sonyamoonglade/delivery-service/test/global"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func initServiceDeps(ctrl *gomock.Controller) (*mock_delivery.MockStorage, *mock_cli.MockCli, *mock_check.MockService) {
@@ -26,11 +26,19 @@ func initServiceDeps(ctrl *gomock.Controller) (*mock_delivery.MockStorage, *mock
 	return deliveryStorage, cliMock, checkServiceMock
 }
 
+func initLogger() *zap.SugaredLogger {
+	l, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+	return l.Sugar()
+}
+
 func TestStatusOK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.StatusOfDeliveryDto{
 		OrderIDs: []int64{1, 2, 3},
@@ -61,7 +69,7 @@ func TestStatusErr(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.StatusOfDeliveryDto{
 		OrderIDs: []int64{1, 2, 3},
@@ -89,7 +97,7 @@ func TestCreateOK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.CreateDeliveryDatabaseDto{
 		OrderID: 2,
@@ -116,7 +124,7 @@ func TestCreateAlreadyExists(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.CreateDeliveryDatabaseDto{
 		OrderID: 2,
@@ -142,7 +150,7 @@ func TestCreateErr(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.CreateDeliveryDatabaseDto{
 		OrderID: 2,
@@ -169,7 +177,7 @@ func TestCompleteOK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(2)
 
@@ -190,7 +198,7 @@ func TestCompleteErr(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(2)
 	mockErr := errors.New("crazy db error")
@@ -212,7 +220,7 @@ func TestCompleteErrDeliveryCantBeCompleted(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(2)
 
@@ -235,7 +243,7 @@ func TestReserveOK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.ReserveDeliveryDto{
 		RunnerID:   2,
@@ -254,7 +262,7 @@ func TestReserveOK(t *testing.T) {
 
 	reservedAt, err := deliveryService.Reserve(inp)
 	require.NoError(t, err)
-	require.Equal(t, time.Now(), reservedAt)
+	require.Equal(t, mockReturn, reservedAt)
 	require.NotZero(t, reservedAt)
 }
 func TestReserveErr(t *testing.T) {
@@ -262,7 +270,7 @@ func TestReserveErr(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.ReserveDeliveryDto{
 		RunnerID:   2,
@@ -291,7 +299,7 @@ func TestReserveAlreadyReserved(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.ReserveDeliveryDto{
 		RunnerID:   2,
@@ -317,7 +325,7 @@ func TestDeleteOK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(4)
 
@@ -337,7 +345,7 @@ func TestDeleteNotFound(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(4)
 
@@ -359,7 +367,7 @@ func TestDeleteErr(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(2)
 	mockErr := errors.New("crazy error")
@@ -383,7 +391,7 @@ func TestWriteCheckOK(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.CheckDtoForCli{
 		Data: dto.CheckDto{
@@ -434,7 +442,7 @@ func TestWriteCheckRestoreKey(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.CheckDtoForCli{
 		Data: dto.CheckDto{
@@ -501,7 +509,7 @@ func TestWriteCheckNoApiKeysLeft(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.CheckDtoForCli{
 		Data: dto.CheckDto{
@@ -553,7 +561,7 @@ func TestWriteCheckTimeoutErr(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.CheckDtoForCli{
 		Data: dto.CheckDto{
@@ -605,7 +613,7 @@ func TestWriteCheckInternalErrRestoringKey(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.CheckDtoForCli{
 		Data: dto.CheckDto{

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
-	"github.com/sonyamoonglade/notification-service/pkg/httpRes"
+	"github.com/sonyamoonglade/notification-service/pkg/response"
 	"go.uber.org/zap"
 )
 
@@ -103,8 +103,8 @@ func parseError(e error) HttpError {
 
 }
 
-func baseErrResponse(m string, code int) httpRes.JSON {
-	return httpRes.JSON{
+func baseErrResponse(m string, code int) response.JSON {
+	return response.JSON{
 		"message":    m,
 		"statusCode": code,
 	}
@@ -116,12 +116,12 @@ func ResponseAndLog(logger *zap.SugaredLogger, w http.ResponseWriter, e error) {
 
 	if errors.As(e, &httpErr) {
 		data := baseErrResponse(httpErr.Error(), httpErr.Code())
-		httpRes.Json(logger, w, httpErr.Code(), data)
+		response.Json(logger, w, httpErr.Code(), data)
 		return
 	}
 
 	parsedErr := parseError(e)
 	data := baseErrResponse(parsedErr.Error(), parsedErr.Code())
-	httpRes.Json(logger, w, parsedErr.Code(), data)
+	response.Json(logger, w, parsedErr.Code(), data)
 	return
 }

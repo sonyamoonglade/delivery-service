@@ -15,7 +15,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/formatter"
-	"github.com/sonyamoonglade/notification-service/pkg/httpRes"
+	"github.com/sonyamoonglade/notification-service/pkg/response"
 	"go.uber.org/zap"
 )
 
@@ -139,7 +139,7 @@ func (h *deliveryHandler) CreateDelivery(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	h.logger.Debug("successfully sent telegram msg")
-	httpRes.Created(w)
+	response.Created(w)
 }
 
 func (h *deliveryHandler) Status(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -156,7 +156,7 @@ func (h *deliveryHandler) Status(w http.ResponseWriter, r *http.Request, _ httpr
 		httpErrors.ResponseAndLog(h.logger, w, err)
 		return
 	}
-	httpRes.Json(h.logger, w, http.StatusOK, httpRes.JSON{
+	response.Json(h.logger, w, http.StatusOK, response.JSON{
 		"result": statuses,
 	})
 	h.logger.Debug("sent")

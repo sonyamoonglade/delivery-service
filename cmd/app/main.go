@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -9,8 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	_ "github.com/golang-migrate/migrate/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/joho/godotenv"
 	"github.com/julienschmidt/httprouter"
 	tgdelivery "github.com/sonyamoonglade/delivery-service"
@@ -25,22 +24,20 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/check"
 	"github.com/sonyamoonglade/delivery-service/pkg/cli"
 	"github.com/sonyamoonglade/delivery-service/pkg/formatter"
-	"github.com/sonyamoonglade/delivery-service/pkg/logging"
-	"github.com/sonyamoonglade/delivery-service/pkg/migrate"
 	"github.com/sonyamoonglade/delivery-service/pkg/postgres"
 	"github.com/sonyamoonglade/delivery-service/pkg/telegram"
-	"go.uber.org/zap"
+	"github.com/sonyamoonglade/notification-service/pkg/logging"
 )
 
 func main() {
 	log.Println("booting an application")
 
-	exit := make(chan os.Signal, 1)
-	signal.Notify(exit, syscall.SIGTERM, os.Interrupt)
+	logsPath, debug, strictMode := parseFlags()
 
-	logger, err := logging.WithCfg(&logging.Config{
-		Level:    zap.NewAtomicLevelAt(zap.DebugLevel),
-		DevMode:  true,
+	logger, err := logging.WithConfig(&logging.Config{
+		Strict:   strictMode,
+		LogsPath: logsPath,
+		Debug:    debug,
 		Encoding: logging.JSON,
 	})
 
@@ -49,8 +46,8 @@ func main() {
 	}
 
 	//Load .env.local for local development
-	if err = godotenv.Load(".env.local"); err != nil {
-		logger.Infof("Ignore this message if app is ran by docker. %s", err.Error())
+	if err = godotenv.Load(".env"); err != nil {
+		logger.Warnf("Ignore this message if app is ran by docker. %s", err.Error())
 	}
 
 	appCfg, err := config.GetAppConfig()
@@ -63,17 +60,6 @@ func main() {
 		logger.Fatalf("Could not connect to database. %s", err.Error())
 	}
 	logger.Info("Database has connected")
-
-	ok, err := migrate.Up(logger, db.DB)
-	if err != nil {
-		logger.Fatalf("Could not run migrations. %s", err.Error())
-	}
-	if !ok {
-		logger.Fatalf("Error runnning migrations.")
-	}
-	if ok {
-		logger.Info("Database is sync with migrations")
-	}
 
 	appBot, err := bot.NewBot(appCfg.Bot, logger)
 	if err != nil {
@@ -125,18 +111,29 @@ func main() {
 	}()
 	logger.Infof("API server is listening on port %s", appCfg.App.Port)
 
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, syscall.SIGTERM, os.Interrupt)
+
 	//Graceful shutdown
 	<-exit
 	logger.Info("Shutting down gracefully...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer func() {
-
-		cancel()
-	}()
+	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
 		logger.Fatalf("could not shutdown httpserver. %s", err.Error())
 	}
 	logger.Info("ok")
+}
+
+func parseFlags() (string, bool, bool) {
+
+	logsPath := flag.String("logs-path", "", "defines path to logging file")
+	debug := flag.Bool("debug", true, "defines debug mode")
+	strictMode := flag.Bool("strict", false, "defines strictness of the logs")
+
+	flag.Parse()
+
+	return *logsPath, *debug, *strictMode
 }

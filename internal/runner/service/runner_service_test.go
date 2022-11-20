@@ -9,8 +9,8 @@ import (
 	"github.com/sonyamoonglade/delivery-service/internal/runner/transport/dto"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	tgErrors "github.com/sonyamoonglade/delivery-service/pkg/errors/telegram"
-	"github.com/sonyamoonglade/delivery-service/test/global"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 //todo: move ctrl to tests..
@@ -22,9 +22,17 @@ func initDeps(t *testing.T) *mock_runner.MockStorage {
 	return runnerStorageMock
 }
 
+func initLogger() *zap.SugaredLogger {
+	l, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+	return l.Sugar()
+}
+
 func TestRegisterOK(t *testing.T) {
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.RegisterRunnerDto{
 		Username:    "Alex Alex",
@@ -46,7 +54,7 @@ func TestRegisterOK(t *testing.T) {
 }
 func TestRegisterAlreadyExists(t *testing.T) {
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.RegisterRunnerDto{
 		Username:    "Alex Alex",
@@ -68,7 +76,7 @@ func TestRegisterAlreadyExists(t *testing.T) {
 }
 func TestRegisterErr(t *testing.T) {
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := dto.RegisterRunnerDto{
 		Username:    "Alex Alex",
@@ -91,7 +99,7 @@ func TestRegisterErr(t *testing.T) {
 
 func TestIsKnownByTelegramOK(t *testing.T) {
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(-512312354)
 
@@ -109,7 +117,7 @@ func TestIsKnownByTelegramOK(t *testing.T) {
 }
 func TestIsKnownByTelegramBadScenario(t *testing.T) {
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(-512312354)
 
@@ -127,7 +135,7 @@ func TestIsKnownByTelegramBadScenario(t *testing.T) {
 }
 func TestIsKnownByTelegramErr(t *testing.T) {
 
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := int64(-512312354)
 	mockErr := errors.New("crazy err")
@@ -147,7 +155,7 @@ func TestIsKnownByTelegramErr(t *testing.T) {
 }
 
 func TestIsRunnerOK(t *testing.T) {
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := "+79128509000"
 	mockID := int64(5)
@@ -165,7 +173,7 @@ func TestIsRunnerOK(t *testing.T) {
 	require.NoError(t, err)
 }
 func TestIsRunnerDoesNotExist(t *testing.T) {
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := "+79128509000"
 	mockID := int64(0)
@@ -184,7 +192,7 @@ func TestIsRunnerDoesNotExist(t *testing.T) {
 	require.Equal(t, tgErrors.RunnerDoesNotExist(inp).Error(), err.Error())
 }
 func TestIsRunnerErr(t *testing.T) {
-	logger := global.InitLogger()
+	logger := initLogger()
 
 	inp := "+79128509000"
 	mockID := int64(0)

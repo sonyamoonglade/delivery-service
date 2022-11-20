@@ -10,7 +10,7 @@ import (
 	"github.com/sonyamoonglade/delivery-service/pkg/binder"
 	"github.com/sonyamoonglade/delivery-service/pkg/errors/httpErrors"
 	"github.com/sonyamoonglade/delivery-service/pkg/validation"
-	"github.com/sonyamoonglade/notification-service/pkg/httpRes"
+	"github.com/sonyamoonglade/notification-service/pkg/response"
 	"go.uber.org/zap"
 )
 
@@ -37,7 +37,7 @@ func (h *runnerHandler) All(w http.ResponseWriter, req *http.Request, _ httprout
 		return
 	}
 
-	httpRes.Json(h.logger, w, http.StatusOK, httpRes.JSON{
+	response.Json(h.logger, w, http.StatusOK, response.JSON{
 		"runners": runners,
 	})
 	return
@@ -71,7 +71,7 @@ func (h *runnerHandler) Register(w http.ResponseWriter, req *http.Request, _ htt
 		return
 	}
 
-	httpRes.Created(w)
+	response.Created(w)
 	return
 }
 
@@ -95,6 +95,6 @@ func (h *runnerHandler) Ban(w http.ResponseWriter, req *http.Request, params htt
 	}
 
 	h.logger.Debug("banned runner %d", phoneNumber)
-	httpRes.Ok(w)
+	response.Ok(w)
 	return
 }
